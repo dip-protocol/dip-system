@@ -1,4 +1,4 @@
-const { evaluate } = require("./dip-core");
+const { evaluate } = require("./dip-core/index");
 const { loadRules } = require("./rules/ruleLoader");
 const { enforce } = require("./enforce");
 const { logAudit } = require("./audit");
