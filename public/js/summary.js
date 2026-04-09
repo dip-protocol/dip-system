@@ -1,18 +1,41 @@
 function renderSummary(logs) {
-  let success=0, failed=0, blocked=0, overridden=0;
+  const el = document.getElementById("summary");
 
-  logs.forEach(l=>{
-    if(l.status==="SUCCESS") success++;
-    if(l.status==="FAILED") failed++;
-    if(l.status==="BLOCKED") blocked++;
-    if(l.status==="OVERRIDDEN") overridden++;
-  });
+  // ✅ Deterministic safety (prevents crash)
+  if (!el) {
+    console.error("Summary element not found");
+    return;
+  }
 
-  const rate = ((overridden/(logs.length||1))*100).toFixed(1);
+  // ✅ Handle empty or undefined logs
+  if (!logs || logs.length === 0) {
+    el.innerHTML = `
+      <div class="card">
+        <h3>Summary</h3>
+        <p>No data available</p>
+      </div>
+    `;
+    return;
+  }
 
-  document.getElementById("summary").innerHTML = `
-    <b>Summary</b><br/>
-    ✅ ${success} | ❌ ${failed} | 🚫 ${blocked} | ⚠️ ${overridden}
-    <br/>Override Rate: ${rate}%
+  let total = logs.length;
+  let allowed = 0;
+  let blocked = 0;
+  let errors = 0;
+
+  for (const log of logs) {
+    if (log?.decision?.status === "ALLOW") allowed++;
+    if (log?.decision?.status === "BLOCK") blocked++;
+    if (log?.result?.error) errors++;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <h3>Summary</h3>
+      <div>Total Requests: ${total}</div>
+      <div>Allowed: ${allowed}</div>
+      <div>Blocked: ${blocked}</div>
+      <div>Errors: ${errors}</div>
+    </div>
   `;
 }

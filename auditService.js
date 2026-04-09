@@ -8,9 +8,15 @@ async function findByRequestId(requestId) {
     .eq("request_id", requestId)
     .single();
 
-  if (error) return null;
+  if (error) {
+    console.error("AUDIT READ ERROR:", {
+      requestId,
+      error: error.message
+    });
+    return null;
+  }
 
-  return data; // ✅ includes execution_input
+  return data; // includes execution_input
 }
 
 // 📜 get recent logs
@@ -21,9 +27,14 @@ async function getAll(limit = 10) {
     .order("timestamp", { ascending: false })
     .limit(limit);
 
-  if (error) return [];
+  if (error) {
+    console.error("AUDIT READ ERROR:", {
+      error: error.message
+    });
+    return [];
+  }
 
-  return data; // ✅ includes execution_input
+  return data || []; // deterministic fallback
 }
 
 module.exports = { findByRequestId, getAll };

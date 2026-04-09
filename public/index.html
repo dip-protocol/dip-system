@@ -56,7 +56,10 @@
   Every action is validated, enforced, and audited.
 </div>
 
-<!-- COLLAPSIBLE ANALYTICS (clean UX) -->
+<!-- ✅ ADDED (fix for summary.js) -->
+<div id="summary" class="section"></div>
+
+<!-- EXISTING SECTIONS -->
 
 <details class="section">
   <summary>📊 Trends</summary>
@@ -76,6 +79,12 @@
 <details class="section">
   <summary>🔥 Impact Analysis</summary>
   <div id="impact"></div>
+</details>
+
+<!-- ✅ ADDED (fix for insights.js) -->
+<details class="section">
+  <summary>🧩 Insights</summary>
+  <div id="insights"></div>
 </details>
 
 <!-- FILTERS -->
@@ -98,17 +107,17 @@
 
 <div id="logs"></div>
 
-<!-- ✅ CORRECT SCRIPT PATHS -->
+<!-- SCRIPTS (ONLY CHANGE: defer added) -->
 
-<script src="/js/utils.js"></script>
-<script src="/js/summary.js"></script>
-<script src="/js/insights.js"></script>
-<script src="/js/trends.js"></script>
-<script src="/js/patterns.js"></script>
-<script src="/js/risk.js"></script>
-<script src="/js/impact.js"></script>
-<script src="/js/logs.js"></script>
-<script src="/js/main.js"></script>
+<script src="/js/utils.js" defer></script>
+<script src="/js/summary.js" defer></script>
+<script src="/js/insights.js" defer></script>
+<script src="/js/trends.js" defer></script>
+<script src="/js/patterns.js" defer></script>
+<script src="/js/risk.js" defer></script>
+<script src="/js/impact.js" defer></script>
+<script src="/js/logs.js" defer></script>
+<script src="/js/main.js" defer></script>
 
 </body>
 </html>

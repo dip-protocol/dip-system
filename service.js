@@ -1,5 +1,5 @@
-const { executeAction } = require("./executor");
-const { run } = require("./runtime");
+const { evaluate } = require("./dip-core");
+const { loadRules } = require("./rules/ruleLoader");
 const { enforce } = require("./enforce");
 const { logAudit } = require("./audit");
 
@@ -35,14 +35,19 @@ async function handleAction(input, requestId) {
   }
 
   let decision;
-  let overridden = false; // ✅ NEW
+  let overridden = false;
 
   // STEP 1: DECISION
   try {
-    decision = await run(input);
+    const rules = await loadRules(input.orgId, input.systemId);
+decision = evaluate(input, rules);
     console.log(`[${requestId}] Decision:`, decision);
+
   } catch (err) {
-    console.error(`[${requestId}] Runtime error:`, err.message);
+    console.error(`[${requestId}] Runtime error:`, {
+      message: err.message,
+      stack: err.stack
+    });
 
     try {
       await logAudit({
@@ -51,17 +56,17 @@ async function handleAction(input, requestId) {
         execution_input: null,
         status: "FAILED",
         error: err.message,
-        override: input.override || null // ✅ NEW
+        override: input.override || null
       });
     } catch (auditErr) {
       console.error(`[${requestId}] Audit failed:`, auditErr.message);
     }
 
-    throw new Error("System failure");
+    throw new Error(`SYSTEM_ERROR: ${err.message}`);
   }
 
   try {
-    // ✅ OVERRIDE-AWARE ENFORCEMENT
+    // STEP 2: ENFORCEMENT
     if (decision.status === "BLOCK") {
       if (input.override) {
         overridden = true;
@@ -73,31 +78,44 @@ async function handleAction(input, requestId) {
       enforce(decision);
     }
 
-    // VALIDATION (unchanged)
+    // STEP 3: VALIDATION
     validateInput(input);
 
     const executionInput = buildExecutionInput(input);
 
-    const result = await executeAction(executionInput, requestId);
+    console.log("EXECUTION INPUT:", executionInput);
 
-    // SUCCESS AUDIT
+    // ✅ FINAL EXECUTION INTENT (MINIMAL PAYLOAD)
+    const executionIntent = {
+      action: executionInput.action.type,
+      payload: {
+        userId: executionInput.userId
+      }
+    };
+
+    // STEP 4: AUDIT
     try {
       await logAudit({
         requestId,
         input,
         execution_input: executionInput,
         decision,
-        result,
-        status: overridden ? "OVERRIDDEN" : "SUCCESS", // ✅ NEW
-        override: input.override || null // ✅ NEW
+        result: executionIntent,
+        status: overridden ? "OVERRIDDEN" : "SUCCESS",
+        override: input.override || null
       });
     } catch (auditErr) {
       console.error(`[${requestId}] Audit failed:`, auditErr.message);
     }
 
-    return result;
+    return executionIntent;
 
   } catch (err) {
+    console.error(`[${requestId}] Execution error:`, {
+      message: err.message,
+      stack: err.stack
+    });
+
     let status = "FAILED";
 
     if (decision?.status === "BLOCK") {
@@ -114,15 +132,15 @@ async function handleAction(input, requestId) {
         input,
         execution_input: executionInput,
         decision,
-        status: overridden ? "OVERRIDDEN" : status, // ✅ NEW
+        status: overridden ? "OVERRIDDEN" : status,
         error: err.message,
-        override: input.override || null // ✅ NEW
+        override: input.override || null
       });
     } catch (auditErr) {
       console.error(`[${requestId}] Audit failed:`, auditErr.message);
     }
 
-    throw err;
+    throw new Error(err.message);
   }
 }
 

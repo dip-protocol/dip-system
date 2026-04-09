@@ -1,12 +1,25 @@
 const express = require("express");
-const path = require("path"); 
+const path = require("path");
 const { handleAction } = require("./service");
-const { supabase } = require("./db"); // ✅ USE DB
+const { supabase } = require("./db");
+const { updateAuditResult } = require("./audit");
 const crypto = require("crypto");
 
 const app = express();
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
+
+// 🔒 CONTENT-TYPE GUARD
+app.use((req, res, next) => {
+  if (req.method === "POST" && !req.is("application/json")) {
+    return res.status(400).json({
+      success: false,
+      error: "Content-Type must be application/json"
+    });
+  }
+  next();
+});
 
 // 🔒 API key
 const API_KEY = process.env.API_KEY;
@@ -30,15 +43,60 @@ app.post("/action", authMiddleware, async (req, res) => {
   const requestId = crypto.randomUUID();
 
   try {
-    await handleAction(req.body, requestId);
+    const input = req.body;
+
+    if (!input || typeof input !== "object") {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid request body",
+        requestId
+      });
+    }
+
+    if (!input.orgId) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing orgId",
+        requestId
+      });
+    }
+
+    if (!input.systemId) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing systemId",
+        requestId
+      });
+    }
+
+    if (!input.action || !input.action.type) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing action.type",
+        requestId
+      });
+    }
+
+    const executionIntent = await handleAction(input, requestId);
 
     res.json({
       success: true,
-      requestId
+      requestId,
+      execution_intent: executionIntent
     });
 
   } catch (err) {
-    res.status(500).json({
+    let statusCode = 500;
+
+    if (err.message.startsWith("INVALID")) {
+      statusCode = 400;
+    } else if (err.message === "Requires override") {
+      statusCode = 400;
+    } else if (!err.message.startsWith("SYSTEM_ERROR")) {
+      statusCode = 400;
+    }
+
+    res.status(statusCode).json({
       success: false,
       error: err.message,
       requestId
@@ -46,7 +104,39 @@ app.post("/action", authMiddleware, async (req, res) => {
   }
 });
 
-// 🔍 GET recent audits (FROM SUPABASE ✅)
+// 📥 RECEIVE EXECUTION RESULT
+app.post("/audit-result", async (req, res) => {
+  try {
+    const { requestId, status, result, error } = req.body;
+
+    if (!requestId || !status) {
+      return res.status(400).json({
+        success: false,
+        error: "requestId and status are required"
+      });
+    }
+
+    await updateAuditResult({
+      requestId,
+      status,
+      result,
+      error
+    });
+
+    return res.json({
+      success: true,
+      requestId
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+// 🔍 GET recent audits
 app.get("/audit", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -54,8 +144,6 @@ app.get("/audit", authMiddleware, async (req, res) => {
       .select("*")
       .order("timestamp", { ascending: false })
       .limit(10);
-
-    console.log("AUDIT FETCH:", data);
 
     if (error) {
       throw new Error(error.message);
@@ -74,7 +162,7 @@ app.get("/audit", authMiddleware, async (req, res) => {
   }
 });
 
-// 🔍 GET single audit (FROM SUPABASE ✅)
+// 🔍 GET single audit
 app.get("/audit/:requestId", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -107,7 +195,7 @@ app.get("/audit/:requestId", authMiddleware, async (req, res) => {
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("Server running on port " + PORT);
 });
 
 process.stdin.resume();
