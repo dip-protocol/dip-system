@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DIP Audit Dashboard</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+      max-width: 900px;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .section {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      padding: 14px;
+      background: #fafafa;
+    }
+
+    .section summary {
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    input {
+      padding: 8px;
+      width: 300px;
+      margin-right: 10px;
+    }
+
+    select {
+      padding: 8px;
+    }
+
+    #logs {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>DIP Audit Dashboard</h1>
+<div class="subtitle">
+  Every action is validated, enforced, and audited.
+</div>
+
+<!-- COLLAPSIBLE ANALYTICS (clean UX) -->
+
+<details class="section">
+  <summary>📊 Trends</summary>
+  <div id="trends"></div>
+</details>
+
+<details class="section">
+  <summary>🧠 Patterns</summary>
+  <div id="patterns"></div>
+</details>
+
+<details class="section">
+  <summary>⚠️ Risk Analysis</summary>
+  <div id="risk"></div>
+</details>
+
+<details class="section">
+  <summary>🔥 Impact Analysis</summary>
+  <div id="impact"></div>
+</details>
+
+<!-- FILTERS -->
+
+<div style="margin-top:20px;">
+  <select id="statusFilter">
+    <option value="ALL">All</option>
+    <option value="SUCCESS">Success</option>
+    <option value="FAILED">Failed</option>
+    <option value="BLOCKED">Blocked</option>
+  </select>
+
+  <input
+    id="searchInput"
+    placeholder="Search by Request ID"
+  />
+</div>
+
+<!-- LOGS -->
+
+<div id="logs"></div>
+
+<!-- ✅ CORRECT SCRIPT PATHS -->
+
+<script src="/js/utils.js"></script>
+<script src="/js/summary.js"></script>
+<script src="/js/insights.js"></script>
+<script src="/js/trends.js"></script>
+<script src="/js/patterns.js"></script>
+<script src="/js/risk.js"></script>
+<script src="/js/impact.js"></script>
+<script src="/js/logs.js"></script>
+<script src="/js/main.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ONLY_ADMIN_CAN_DELETE",
+    "when": { "action.type": "DELETE_USER" },
+    "if": { "context.role": { "not_equals": "admin" } },
+    "then": {
+      "message": "Only admin can delete users",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "ONLY_ADMIN_CAN_CREATE",
+    "when": { "action.type": "CREATE_USER" },
+    "if": { "context.role": { "not_equals": "admin" } },
+    "then": {
+      "message": "Only admin can create users",
+      "enforcement": "BLOCK"
+    }
+  }
+]
