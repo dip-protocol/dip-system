@@ -176,19 +176,14 @@ app.get("/audit", authMiddleware, async (req, res) => {
 });
 
 // 📊 NEW: AUDIT SUMMARY (DECISION INTELLIGENCE)
+const { getAll } = require("./auditService"); // ✅ ADD THIS IMPORT
+
 app.get("/audit/summary", authMiddleware, async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from("audit_logs")
-      .select("*")
-      .order("timestamp", { ascending: false })
-      .limit(100); // higher limit for insights
+    const days = Number(req.query.days || 7); // ✅ read filter
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    const summary = await getAuditSummary(data || []);
+    const logs = await getAll({ days });      // ✅ USE TIME FILTER
+    const summary = await getAuditSummary(logs);
 
     res.json({
       success: true,
@@ -202,7 +197,6 @@ app.get("/audit/summary", authMiddleware, async (req, res) => {
     });
   }
 });
-
 // 🔍 GET single audit
 app.get("/audit/:requestId", authMiddleware, async (req, res) => {
   try {

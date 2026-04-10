@@ -16,16 +16,19 @@ async function findByRequestId(requestId) {
     return null;
   }
 
-  return data; // includes execution_input
+  return data;
 }
 
-// 📜 get recent logs
-async function getAll(limit = 10) {
+// 📜 get logs with TIME FILTER (FINAL)
+async function getAll({ days = 7 } = {}) {
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - days);
+
   const { data, error } = await supabase
     .from("audit_logs")
     .select("*")
-    .order("timestamp", { ascending: false })
-    .limit(limit);
+    .gte("timestamp", fromDate.toISOString()) // ✅ time filter
+    .order("timestamp", { ascending: false });
 
   if (error) {
     console.error("AUDIT READ ERROR:", {
@@ -34,30 +37,31 @@ async function getAll(limit = 10) {
     return [];
   }
 
-  return data || []; // deterministic fallback
+  return data || [];
 }
 
-// 📊 audit summary (deterministic analytics)
+// 📊 audit summary (STRICT + DETERMINISTIC)
 async function getAuditSummary(auditLogs) {
   const summary = {
-  total_requests: 0,
-  status_breakdown: {
-    ALLOW: 0,
-    BLOCK: 0,
-    REQUIRE_OVERRIDE: 0
-  },
-  rule_stats: {}
-};
+    total_requests: 0,
+    status_breakdown: {
+      ALLOW: 0,
+      BLOCK: 0,
+      REQUIRE_OVERRIDE: 0
+    },
+    rule_stats: {}
+  };
 
   const VALID = ["ALLOW", "BLOCK", "REQUIRE_OVERRIDE"];
 
-for (const log of auditLogs) {
-  const status = log.decision?.status;
+  for (const log of auditLogs) {
+    const status = log.decision?.status;
 
-if (VALID.includes(status)) {
-  summary.status_breakdown[status]++;
-  summary.total_requests++; // ✅ ADD THIS LINE
-}
+    // ✅ ONLY valid decision states
+    if (VALID.includes(status)) {
+      summary.status_breakdown[status]++;
+      summary.total_requests++;
+    }
 
     const trace = log.decision?.meta?.trace || [];
 

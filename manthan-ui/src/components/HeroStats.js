@@ -1,4 +1,4 @@
-export default function HeroStats({ data }) {
+export default function HeroStats({ data, selected, onSelect }) {
   if (!data) return null;
 
   const allow = data.status_breakdown?.ALLOW || 0;
@@ -7,27 +7,55 @@ export default function HeroStats({ data }) {
 
   const total = data.total_requests || 0;
 
+  const percent = (value) =>
+    total ? ((value / total) * 100).toFixed(1) : "0.0";
+
+  const Card = ({ type, value, label, percentValue, className }) => {
+    const isActive = selected === type;
+
+    return (
+      <div
+        className={`hero-card ${className || ""} ${isActive ? "active" : ""}`}
+        onClick={() => onSelect(type)}
+      >
+        <div className="hero-number">{value}</div>
+
+        {percentValue !== undefined && (
+          <div className="hero-percent">{percentValue}%</div>
+        )}
+
+        <div className="hero-label">{label}</div>
+      </div>
+    );
+  };
+
   return (
     <div className="hero">
-      <div className="hero-card">
-        <div className="hero-number">{total}</div>
-        <div className="hero-label">Total Decisions</div>
-      </div>
+      <Card value={total} label="Total Decisions" />
 
-      <div className="hero-card green">
-        <div className="hero-number">{allow}</div>
-        <div className="hero-label">Allowed</div>
-      </div>
+      <Card
+        type="ALLOW"
+        value={allow}
+        percentValue={percent(allow)}
+        label="Allowed"
+        className="green"
+      />
 
-      <div className="hero-card red">
-        <div className="hero-number">{block}</div>
-        <div className="hero-label">Blocked</div>
-      </div>
+      <Card
+        type="BLOCK"
+        value={block}
+        percentValue={percent(block)}
+        label="Blocked"
+        className="red"
+      />
 
-      <div className="hero-card yellow">
-        <div className="hero-number">{override}</div>
-        <div className="hero-label">Override</div>
-      </div>
+      <Card
+        type="REQUIRE_OVERRIDE"
+        value={override}
+        percentValue={percent(override)}
+        label="Override"
+        className="yellow"
+      />
     </div>
   );
 }
