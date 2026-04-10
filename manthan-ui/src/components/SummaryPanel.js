@@ -3,7 +3,7 @@ export default function SummaryPanel({ data, selected, onSelect }) {
   const block = data.status_breakdown?.BLOCK || 0;
   const override =
     data.status_breakdown?.REQUIRE_OVERRIDE ||
-    data.status_breakdown?.OVERRIDE ||
+     ||
     0;
 
   const total = data.total_requests || 0;

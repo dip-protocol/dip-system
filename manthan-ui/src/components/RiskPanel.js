@@ -5,30 +5,74 @@ export default function RiskPanel() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    getSummary().then(res => setData(res.data));
+    getSummary().then((res) => setData(res.data));
   }, []);
 
   if (!data) return null;
 
-  const riskScore =
-    (data.status_breakdown.BLOCK || 0) /
-    (data.total_requests || 1);
+  const total = data.total_requests || 1;
+
+  const counts = {
+    BLOCK: data.status_breakdown.BLOCK || 0,
+    REQUIRE_OVERRIDE: data.status_breakdown.REQUIRE_OVERRIDE || 0,
+    ALLOW: data.status_breakdown.ALLOW || 0,
+  };
+
+  const percentages = {
+    BLOCK: ((counts.BLOCK / total) * 100).toFixed(1),
+    REQUIRE_OVERRIDE: ((counts.REQUIRE_OVERRIDE / total) * 100).toFixed(1),
+    ALLOW: ((counts.ALLOW / total) * 100).toFixed(1),
+  };
 
   return (
     <div className="card">
-      <h3>Risk Level</h3>
+      <h3 className="mb-4">Risk Composition</h3>
 
-      <div className="metric">
-        {(riskScore * 100).toFixed(2)}% of decisions are blocked
+      {/* Segmented Bar */}
+      <div className="w-full h-3 flex rounded overflow-hidden mb-5">
+        <div
+          className="bg-red-500"
+          style={{ width: `${percentages.BLOCK}%` }}
+        ></div>
+        <div
+          className="bg-yellow-400"
+          style={{ width: `${percentages.REQUIRE_OVERRIDE}%` }}
+        ></div>
+        <div
+          className="bg-green-500"
+          style={{ width: `${percentages.ALLOW}%` }}
+        ></div>
       </div>
 
-      {riskScore > 0.5 && (
-        <div className="metric red">System is high risk</div>
-      )}
+      {/* Metrics */}
+      <div className="flex flex-col gap-3 text-sm">
+        <div className="flex justify-between items-center">
+          <span className="text-red-400 font-medium">BLOCK</span>
+          <span className="font-semibold">
+            {percentages.BLOCK}% ({counts.BLOCK})
+          </span>
+        </div>
 
-      {riskScore <= 0.5 && (
-        <div className="metric green">System is stable</div>
-      )}
+        <div className="flex justify-between items-center">
+          <span className="text-yellow-300 font-medium">
+            REQUIRE_OVERRIDE
+          </span>
+          <span className="font-semibold">
+            {percentages.REQUIRE_OVERRIDE}% ({counts.REQUIRE_OVERRIDE})
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-green-400 font-medium">ALLOW</span>
+          <span className="font-semibold">
+            {percentages.ALLOW}% ({counts.ALLOW})
+          </span>
+        </div>
+      </div>
+
+      <div className="text-xs text-gray-500 mt-4">
+        Risk = BLOCK + REQUIRE_OVERRIDE
+      </div>
     </div>
   );
 }

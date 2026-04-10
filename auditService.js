@@ -40,19 +40,24 @@ async function getAll(limit = 10) {
 // 📊 audit summary (deterministic analytics)
 async function getAuditSummary(auditLogs) {
   const summary = {
-    total_requests: auditLogs.length,
-    status_breakdown: {},
-    rule_stats: {}
-  };
+  total_requests: 0,
+  status_breakdown: {
+    ALLOW: 0,
+    BLOCK: 0,
+    REQUIRE_OVERRIDE: 0
+  },
+  rule_stats: {}
+};
 
-  for (const log of auditLogs) {
-    const status = log.decision?.status;
+  const VALID = ["ALLOW", "BLOCK", "REQUIRE_OVERRIDE"];
 
-    // Status breakdown
-    if (status) {
-      summary.status_breakdown[status] =
-        (summary.status_breakdown[status] || 0) + 1;
-    }
+for (const log of auditLogs) {
+  const status = log.decision?.status;
+
+if (VALID.includes(status)) {
+  summary.status_breakdown[status]++;
+  summary.total_requests++; // ✅ ADD THIS LINE
+}
 
     const trace = log.decision?.meta?.trace || [];
 
