@@ -187,3 +187,19 @@ h1 {
   text-align: center;
   margin-bottom: 25px;
 }
+/* ===== HERO META (PERCENT + TREND SIDE BY SIDE) ===== */
+
+.hero-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* TREND TEXT (↑ +5 / ↓ -3) */
+.hero-trend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #9ca3af;
+}

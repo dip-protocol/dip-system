@@ -16,7 +16,7 @@ export default function HeroStats({ data, selected, onSelect }) {
     return (
       <div
         className={`hero-card ${className || ""} ${isActive ? "active" : ""}`}
-        onClick={() => onSelect(type)}
+        onClick={() => type && onSelect(type)}
       >
         <div className="hero-number">{value}</div>
 

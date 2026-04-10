@@ -1,4 +1,4 @@
-You are continuing work on Manthan — a deterministic Decision Intelligence System.
+You are continuing work on \*\*Manthan — a deterministic Decision Intelligence System\*\*.
 
 
 
@@ -8,89 +8,117 @@ STRICT RULES (DO NOT VIOLATE):
 
 1\. NO ARCHITECTURE DRIFT
 
-\- Do NOT introduce new patterns, abstractions, or redesigns
 
-\- Work ONLY within existing structure (service.js, audit, summary, React panels)
 
-\- No new frameworks, no refactors unless explicitly asked
+\* Do NOT introduce new patterns, abstractions, or redesigns
+
+\* Work ONLY within existing files (service.js, auditService.js, server.js, React components)
+
+\* No refactors unless explicitly asked
 
 
 
 2\. DECISION IS SINGLE SOURCE OF TRUTH
 
-\- decision.status ∈ { ALLOW, BLOCK, REQUIRE\_OVERRIDE }
 
-\- Audit MUST store decision.status exactly
 
-\- No derived statuses like SUCCESS, OVERRIDDEN, BLOCKED
+\* decision.status ∈ { ALLOW, BLOCK, REQUIRE\_OVERRIDE }
+
+\* Audit MUST store decision.status exactly
+
+\* No derived statuses like SUCCESS, FAILED, BLOCKED, etc.
 
 
 
 3\. OVERRIDE SEMANTICS (LOCKED)
 
-\- Rule fail → BLOCK
 
-\- If override present → decision.status = REQUIRE\_OVERRIDE
 
-\- Override is NOT metadata, it is a decision state
+\* Rule fail → BLOCK
+
+\* If override present → decision.status = REQUIRE\_OVERRIDE
+
+\* Override is a decision state, NOT metadata
 
 
 
 4\. SYSTEM FLOW (DO NOT CHANGE)
 
-\- evaluate() → decision
 
-\- enforce() → blocks only if BLOCK without override
 
-\- validateInput()
+\* evaluate() → decision
 
-\- buildExecutionInput()
+\* enforce() → blocks only if BLOCK without override
 
-\- logAudit() → must store decision.status
+\* validateInput()
+
+\* buildExecutionInput()
+
+\* logAudit() → must store decision.status
 
 
 
 5\. SUMMARY CONTRACT (LOCKED)
 
-\- status\_breakdown must ONLY contain:
 
-&#x20; ALLOW, BLOCK, REQUIRE\_OVERRIDE
 
-\- total\_requests = sum of all three
+\* status\_breakdown MUST ONLY contain:
 
-\- No grouping, no inference, no fallback logic
+
+
+&#x20; \* ALLOW
+
+&#x20; \* BLOCK
+
+&#x20; \* REQUIRE\_OVERRIDE
+
+\* total\_requests = sum of above
+
+\* No grouping, no inference, no fallback logic
 
 
 
 6\. FRONTEND CONTRACT
 
-\- UI reads ONLY from /audit/summary and /audit
 
-\- No recomputation of status in frontend
 
-\- selectedType filters trace panel only
+\* UI reads ONLY from:
 
 
 
-7\. DO NOT ADD:
+&#x20; \* /audit/summary
 
-\- No caching layers
+&#x20; \* /audit
 
-\- No async background jobs
+\* No recomputation of status in frontend
 
-\- No ML/LLM logic
+\* selectedType filters trace panel only
 
-\- No automatic overrides
+
+
+7\. DO NOT ADD
+
+
+
+\* No caching layers
+
+\* No async background jobs
+
+\* No ML/LLM logic
+
+\* No automatic overrides
 
 
 
 8\. DEBUG PRINCIPLE
 
-\- If counts mismatch → issue is in summary
 
-\- If wrong status stored → issue is in service.js
 
-\- If UI mismatch → frontend only
+\* If counts mismatch → issue in summary (auditService.js)
+
+\* If wrong status stored → issue in service.js
+
+\* If UI mismatch → frontend only
 
 
 
@@ -98,37 +126,65 @@ STRICT RULES (DO NOT VIOLATE):
 
 
 
-CURRENT STATE:
+CURRENT STATE (LOCKED):
 
 
 
 Backend:
 
-\- service.js finalized with override → REQUIRE\_OVERRIDE
 
-\- audit stores decision.status
 
-\- enforcement deterministic
+\* auditService.js supports range-based filtering:
+
+
+
+&#x20; \* 1d, 7d, 30d, 365d, 5y, all
+
+\* getAuditSummary() is deterministic and strict
+
+\* server.js uses:
+
+&#x20; → getAll(range)
+
+&#x20; → getAuditSummary(logs)
+
+\* No trend logic used in UI
 
 
 
 Frontend:
 
-\- HeroStats, SummaryPanel, RiskPanel, RuleHeatmap, TracePanel
 
-\- Uses summary + audit endpoints
 
-\- selectedType used for filtering
+\* HeroStats shows:
 
 
 
-Known Issues (if any):
+&#x20; \* total
 
-\- UI clarity / cognitive load
+&#x20; \* ALLOW / BLOCK / REQUIRE\_OVERRIDE
 
-\- Trace panel explainability
+&#x20; \* percentage distribution
 
-\- Visual hierarchy improvements
+\* Range selector exists and drives API:
+
+&#x20; → /audit/summary?range=...
+
+\* No trend/diff shown (intentionally removed for clarity)
+
+\* Clean centered layout, no redundant panels
+
+
+
+Removed (INTENTIONAL):
+
+
+
+\* Risk panel
+
+\* Summary panel duplication
+
+\* Trend/diff UI
 
 
 
@@ -136,43 +192,71 @@ Known Issues (if any):
 
 
 
-YOUR TASK:
+OBJECTIVE:
 
 
 
-Continue from this exact state.
-
-Make only incremental, deterministic improvements.
-
-
-
-DO NOT:
-
-\- Refactor architecture
-
-\- Rename core concepts
-
-\- Introduce new decision states
+Continue improving \*\*clarity, explainability, and decision intelligence UX\*\*
 
 
 
 DO:
 
-\- Improve clarity
-
-\- Fix bugs
-
-\- Enhance explainability
-
-\- Keep everything traceable and auditable
 
 
+\* Improve readability and hierarchy
 
-If you propose a change:
+\* Improve explainability of rules / trace
 
-\- Show exact file + exact lines
+\* Add meaningful insights (deterministic only)
 
-\- Explain why it does NOT violate constraints
+
+
+DO NOT:
+
+
+
+\* Change architecture
+
+\* Add new decision states
+
+\* Add derived metrics without audit basis
+
+\* Introduce hidden logic
+
+
+
+\---
+
+
+
+RESPONSE RULES:
+
+
+
+If proposing a change:
+
+
+
+\* Show exact file
+
+\* Show exact code
+
+\* Explain why it does NOT violate constraints
+
+
+
+Keep everything:
+
+
+
+\* Deterministic
+
+\* Traceable
+
+\* Auditable
+
+\* Minimal
 
 
 
