@@ -1,238 +1,276 @@
-\# DIP System
+# 🚀 DIP — Decision Infrastructure Platform
 
+> **Every decision is traceable, auditable, and built for trust.**
 
+---
 
-Application layer that enforces decisions from DIP.
+## 🧠 What is DIP?
 
+DIP (Decision Infrastructure Platform) is a **deterministic decision system** that converts inputs into enforceable decisions with full auditability and explainability.
 
+---
 
-\---
+## ⚙️ Core Flow
 
+```
+Input → Rules → Decision → Enforcement → Execution Intent → Audit
+```
 
+* No execution side effects
+* No AI-driven decisions
+* Fully deterministic
 
-\## 🧠 Overview
+---
 
+## 🔒 System Guarantees
 
+* ✅ Deterministic (same input + rules → same output)
+* ✅ No runtime mutation
+* ✅ Full audit logging
+* ✅ Explainable decisions (trace)
+* ✅ No side effects (execution is external)
 
-DIP System connects real-world actions to a deterministic decision engine.
+---
 
+## 📁 Project Structure
 
+```
+dip-system/
+├── dip-core/
+│   └── engine.js        → Decision engine (evaluate)
+├── rules/               → Rule definitions
+├── service.js           → Orchestration layer
+├── enforce.js           → Enforcement logic
+├── audit.js             → Audit write
+├── auditService.js      → Audit read + analytics
+├── server.js            → API layer
+├── db.js                → Supabase client
+├── public/              → Static UI (optional)
+```
 
-It:
+---
 
+## 🧠 Decision Engine
 
+### Function
 
-\- Builds structured input
+```js
+evaluate(input, rules)
+```
 
-\- Calls DIP Runtime
+---
 
-\- Enforces decisions
+### Output
 
-\- Executes real actions
-
-
-
-\---
-
-
-
-\## 🔁 Flow
-
-
-
-
-
-Request → Controller → Service → run() → enforce() → execute()
-
-
-
-
-
-\---
-
-
-
-\## 🧭 Architecture
-
-
-
-> DIP ensures that no action is executed without passing through a deterministic decision layer.
-
-
-
-```mermaid
-
-flowchart TD
-
-
-
-subgraph System Layer
-
-A\[Request]
-
-B\[Controller]
-
-C\[Service]
-
-G\[Enforce]
-
-H\[Execute]
-
-end
-
-
-
-subgraph Runtime Layer
-
-D\[run()]
-
-end
-
-
-
-subgraph Core Layer
-
-E\[evaluate()]
-
-end
-
-
-
-A --> B --> C --> D --> E --> F\[Decision] --> G
-
-G -->|ALLOW| H
-
-G -->|BLOCK| I\[Stop Execution]
-
-G -->|REQUIRE\_OVERRIDE| J\[Escalate]
-
-📦 Example
-
-const { run } = require("dip-runtime");
-
-const { enforce } = require("./enforce");
-
-
-
-async function deleteUser(userId, role) {
-
-&#x20; const input = {
-
-&#x20;   action: { type: "DELETE\_USER" },
-
-&#x20;   context: { role },
-
-&#x20;   data: { userId }
-
-&#x20; };
-
-
-
-&#x20; const decision = run(input);
-
-
-
-&#x20; enforce(decision);
-
-
-
-&#x20; return deleteUserFromDB(userId);
-
+```json
+{
+  "status": "ALLOW | BLOCK | REQUIRE_OVERRIDE",
+  "violations": [],
+  "reason": "...",
+  "meta": {
+    "trace": []
+  }
 }
+```
 
-🔒 Enforcement Rule
+---
 
-No action without enforcement
+### 🔍 Trace (Explainability)
 
+Each rule evaluation is recorded:
 
+```json
+{
+  "rule_id": "no-user-delete",
+  "when_match": true,
+  "if_match": true,
+  "result": "VIOLATION"
+}
+```
 
-All sensitive operations MUST follow:
+#### Trace States
 
+| State     | Meaning                       |
+| --------- | ----------------------------- |
+| SKIPPED   | Rule not applicable           |
+| PASSED    | Rule checked but not violated |
+| VIOLATION | Rule triggered                |
 
+---
 
-const decision = run(input);
+## 📜 Rule System
 
+Rules are defined as JSON:
 
+```json
+{
+  "id": "no-user-delete",
+  "when": { "action.type": "delete" },
+  "if": { "context.role": { "equals": "user" } },
+  "then": {
+    "enforcement": "BLOCK",
+    "message": "Users cannot delete"
+  }
+}
+```
 
-enforce(decision);
+---
 
+### Rule Semantics
 
+* `when` → applicability
+* `if` → violation condition
+* `then.enforcement` → action
 
-execute();
+---
 
-📁 Structure
+## 🚀 API Endpoints
 
-service.js    → business logic + enforcement
+---
 
-controller.js → request validation
+### 🔥 POST `/action`
 
-app.js        → test harness
+Evaluate a decision and return execution intent.
 
-enforce.js    → enforcement logic
+#### Request
 
-🧱 Responsibilities
+```json
+{
+  "orgId": "org_1",
+  "systemId": "repo",
+  "action": { "type": "delete" },
+  "context": { "role": "user" }
+}
+```
 
-Controller
+#### Response
 
-Validates incoming request
+```json
+{
+  "success": true,
+  "requestId": "...",
+  "execution_intent": {}
+}
+```
 
-Extracts required fields
+---
 
-Service
+### 📥 POST `/audit-result`
 
-Builds DIP input
+Record execution outcome.
 
-Calls runtime (run)
+```json
+{
+  "requestId": "...",
+  "status": "SUCCESS | FAILED",
+  "result": {},
+  "error": null
+}
+```
 
-Enforces decision
+---
 
-Executes action
+### 📜 GET `/audit`
 
-Enforce
+Fetch recent audit logs.
 
-Converts decision → control
+---
 
-Blocks or allows execution
+### 🔍 GET `/audit/:requestId`
 
-⚠️ Guarantees
+Fetch a specific audit record.
 
-No bypass of decision checks
+---
 
-All actions gated by DIP
+### 📊 GET `/audit/summary`
 
-Invalid input fails early
+Aggregated decision intelligence.
 
-Errors are controlled and consistent
+#### Response
 
-Deterministic behavior
+```json
+{
+  "success": true,
+  "data": {
+    "total_requests": 100,
+    "status_breakdown": {
+      "ALLOW": 40,
+      "BLOCK": 40,
+      "REQUIRE_OVERRIDE": 20
+    },
+    "rule_stats": {
+      "no-user-delete": {
+        "violations": 25,
+        "passes": 10,
+        "skipped": 65
+      }
+    }
+  }
+}
+```
 
-❌ What It Does NOT Do
+---
 
-Does not define rules
+## 📊 Audit System
 
-Does not evaluate rules (handled by runtime/core)
+Every request logs:
 
-Does not mutate decision logic
+* input
+* decision
+* execution_input
+* result
+* status
+* error
+* timestamp
 
-🧠 Design Philosophy
+---
 
-DIP decides.
+## 🧠 Decision Intelligence
 
-System enforces.
+DIP provides:
 
-Reality follows.
+* 🔍 **Trace** → Why a decision happened
+* 📊 **Summary** → System-wide patterns
 
-🧩 Role in Architecture
+---
 
-dip-core     → decision engine
+## 🔒 Constraints (Non-Negotiable)
 
-dip-runtime  → rule execution
+* ❌ No changes to decision logic
+* ❌ No execution inside system
+* ❌ No API contract changes
+* ❌ No side effects
+* ✅ Audit logging mandatory
 
-dip-system   → enforcement + execution
+---
 
-💡 One-Line Summary
+## 🧪 Validation Rule
 
+> Same input + same rules → same decision
 
+---
 
-The layer where decisions become real-world actions.
+## 🏁 Current State
 
+* ✅ Deterministic decision engine
+* ✅ Rule enforcement system
+* ✅ Audit logging
+* ✅ Explainability (trace)
+* ✅ Analytics layer (`/audit/summary`)
+
+---
+
+## 🚀 Next Evolution
+
+### ➜ Manthan (Decision Intelligence UI)
+
+* Rule heatmaps
+* Decision graph visualization
+* Risk panels
+* Override tracking
+
+---
+
+## 🧭 Final Principle
+
+> **Intent is a claim. System evaluation is truth.**

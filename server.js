@@ -3,9 +3,22 @@ const path = require("path");
 const { handleAction } = require("./service");
 const { supabase } = require("./db");
 const { updateAuditResult } = require("./audit");
+const { getAuditSummary } = require("./auditService"); // ✅ ADDED
 const crypto = require("crypto");
 
+
+const cors = require("cors");
+
 const app = express();
+
+// ✅ MUST BE HERE (TOP — BEFORE EVERYTHING)
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "x-api-key"]
+}));
+
+app.use(express.json());
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
@@ -152,6 +165,34 @@ app.get("/audit", authMiddleware, async (req, res) => {
     res.json({
       success: true,
       data: data || []
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+// 📊 NEW: AUDIT SUMMARY (DECISION INTELLIGENCE)
+app.get("/audit/summary", authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("audit_logs")
+      .select("*")
+      .order("timestamp", { ascending: false })
+      .limit(100); // higher limit for insights
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const summary = await getAuditSummary(data || []);
+
+    res.json({
+      success: true,
+      data: summary
     });
 
   } catch (err) {

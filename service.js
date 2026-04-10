@@ -3,29 +3,28 @@ const { loadRules } = require("./rules/ruleLoader");
 const { enforce } = require("./enforce");
 const { logAudit } = require("./audit");
 
-// VALIDATION LAYER (unchanged)
+// VALIDATION
 function validateInput(input) {
   if (input.action.type === "DELETE_USER") {
-    if (!input.data || !input.data.userId) {
+    if (!input.data?.userId) {
       throw new Error("INVALID: Missing userId");
     }
   }
 
   if (input.action.type === "CREATE_USER") {
-    if (!input.data || !input.data.userId) {
+    if (!input.data?.userId) {
       throw new Error("INVALID: Missing userId");
     }
   }
 }
 
-// EXECUTION INPUT (unchanged)
+// EXECUTION INPUT
 function buildExecutionInput(input) {
+  const userId = input?.data?.userId ?? input?.userId ?? null;
+
   return {
     ...input,
-    userId:
-      input?.data?.userId ||
-      input?.userId ||
-      null
+    userId
   };
 }
 
@@ -35,41 +34,31 @@ async function handleAction(input, requestId) {
   }
 
   let decision;
-  let overridden = false;
 
   // STEP 1: DECISION
   try {
     const rules = await loadRules(input.orgId, input.systemId);
-decision = evaluate(input, rules);
+    decision = evaluate(input, rules);
+
     console.log(`[${requestId}] Decision:`, decision);
-
   } catch (err) {
-    console.error(`[${requestId}] Runtime error:`, {
-      message: err.message,
-      stack: err.stack
+    await logAudit({
+      requestId,
+      input,
+      execution_input: null,
+      status: "FAILED",
+      error: err.message,
+      override: input.override || null
     });
-
-    try {
-      await logAudit({
-        requestId,
-        input,
-        execution_input: null,
-        status: "FAILED",
-        error: err.message,
-        override: input.override || null
-      });
-    } catch (auditErr) {
-      console.error(`[${requestId}] Audit failed:`, auditErr.message);
-    }
 
     throw new Error(`SYSTEM_ERROR: ${err.message}`);
   }
 
   try {
-    // STEP 2: ENFORCEMENT
+    // STEP 2: ENFORCEMENT + OVERRIDE
     if (decision.status === "BLOCK") {
       if (input.override) {
-        overridden = true;
+        decision.status = "REQUIRE_OVERRIDE"; // 🔥 CORE FIX
         console.log(`[${requestId}] ⚠️ OVERRIDE APPLIED`);
       } else {
         enforce(decision);
@@ -83,9 +72,7 @@ decision = evaluate(input, rules);
 
     const executionInput = buildExecutionInput(input);
 
-    console.log("EXECUTION INPUT:", executionInput);
-
-    // ✅ FINAL EXECUTION INTENT (MINIMAL PAYLOAD)
+    // STEP 4: EXECUTION INTENT
     const executionIntent = {
       action: executionInput.action.type,
       payload: {
@@ -93,52 +80,31 @@ decision = evaluate(input, rules);
       }
     };
 
-    // STEP 4: AUDIT
-    try {
-      await logAudit({
-        requestId,
-        input,
-        execution_input: executionInput,
-        decision,
-        result: executionIntent,
-        status: overridden ? "OVERRIDDEN" : "SUCCESS",
-        override: input.override || null
-      });
-    } catch (auditErr) {
-      console.error(`[${requestId}] Audit failed:`, auditErr.message);
-    }
+    // STEP 5: AUDIT (ONLY TRUTH)
+    await logAudit({
+      requestId,
+      input,
+      execution_input: executionInput,
+      decision,
+      result: executionIntent,
+      status: decision.status,
+      override: input.override || null
+    });
 
     return executionIntent;
 
   } catch (err) {
-    console.error(`[${requestId}] Execution error:`, {
-      message: err.message,
-      stack: err.stack
-    });
-
-    let status = "FAILED";
-
-    if (decision?.status === "BLOCK") {
-      status = "BLOCKED";
-    } else if (err.message.startsWith("INVALID")) {
-      status = "INVALID";
-    }
-
     const executionInput = buildExecutionInput(input);
 
-    try {
-      await logAudit({
-        requestId,
-        input,
-        execution_input: executionInput,
-        decision,
-        status: overridden ? "OVERRIDDEN" : status,
-        error: err.message,
-        override: input.override || null
-      });
-    } catch (auditErr) {
-      console.error(`[${requestId}] Audit failed:`, auditErr.message);
-    }
+    await logAudit({
+      requestId,
+      input,
+      execution_input: executionInput,
+      decision,
+      status: decision?.status || "FAILED",
+      error: err.message,
+      override: input.override || null
+    });
 
     throw new Error(err.message);
   }

@@ -43,6 +43,18 @@ function printEntry(entry) {
     });
   }
 
+  // ✅ NEW: TRACE (CRITICAL ADDITION)
+  const trace = entry.decision?.meta?.trace || [];
+
+  if (trace.length > 0) {
+    console.log("\n🧠 TRACE (Rule Evaluation)");
+    trace.forEach(t => {
+      console.log(
+        `   - ${t.rule_id} → ${t.result} (when: ${t.when_match}, if: ${t.if_match})`
+      );
+    });
+  }
+
   console.log("\n⚙️ RESULT");
   console.log("  Result :", entry.result || "N/A");
   console.log("  Status :", entry.status);

@@ -49,31 +49,33 @@ function evaluate(input, rules) {
   for (const rule of rules) {
     const whenMatch = matchesWhen(input, rule.when);
 
-    const traceEntry = {
+    let result = "SKIPPED";
+    let ifMatch = false;
+
+    if (whenMatch) {
+      matchedRules++;
+
+      ifMatch = matchesIf(input, rule.if);
+
+      if (ifMatch) {
+        violations.push({
+          rule_id: rule.id,
+          message: rule.then?.message,
+          enforcement: rule.then.enforcement
+        });
+
+        result = "VIOLATION";
+      } else {
+        result = "PASSED";
+      }
+    }
+
+    trace.push({
       rule_id: rule.id,
       when_match: whenMatch,
-      if_match: null
-    };
-
-    if (!whenMatch) {
-      trace.push(traceEntry);
-      continue;
-    }
-
-    matchedRules++;
-
-    const ifMatch = matchesIf(input, rule.if);
-    traceEntry.if_match = ifMatch;
-
-    if (ifMatch) {
-      violations.push({
-        rule_id: rule.id,
-        message: rule.then?.message,
-        enforcement: rule.then.enforcement
-      });
-    }
-
-    trace.push(traceEntry);
+      if_match: whenMatch ? ifMatch : false,
+      result
+    });
   }
 
   // ❌ NO RULE MATCHED
