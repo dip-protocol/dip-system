@@ -3,15 +3,13 @@ const path = require("path");
 const { handleAction } = require("./service");
 const { supabase } = require("./db");
 const { updateAuditResult } = require("./audit");
-const { getAuditSummary } = require("./auditService"); // ✅ ADDED
+const { getAuditSummaryWithTrend } = require("./auditService"); // ✅ FINAL
 const crypto = require("crypto");
-
-
 const cors = require("cors");
 
 const app = express();
 
-// ✅ MUST BE HERE (TOP — BEFORE EVERYTHING)
+// ✅ CORS
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST"],
@@ -19,9 +17,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
 
 // 🔒 CONTENT-TYPE GUARD
 app.use((req, res, next) => {
@@ -34,10 +30,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// 🔒 API key
+// 🔒 API KEY
 const API_KEY = process.env.API_KEY;
 
-// 🔒 Auth middleware
+// 🔒 AUTH
 function authMiddleware(req, res, next) {
   const key = req.headers["x-api-key"];
 
@@ -59,35 +55,19 @@ app.post("/action", authMiddleware, async (req, res) => {
     const input = req.body;
 
     if (!input || typeof input !== "object") {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid request body",
-        requestId
-      });
+      return res.status(400).json({ success: false, error: "Invalid request body", requestId });
     }
 
     if (!input.orgId) {
-      return res.status(400).json({
-        success: false,
-        error: "Missing orgId",
-        requestId
-      });
+      return res.status(400).json({ success: false, error: "Missing orgId", requestId });
     }
 
     if (!input.systemId) {
-      return res.status(400).json({
-        success: false,
-        error: "Missing systemId",
-        requestId
-      });
+      return res.status(400).json({ success: false, error: "Missing systemId", requestId });
     }
 
     if (!input.action || !input.action.type) {
-      return res.status(400).json({
-        success: false,
-        error: "Missing action.type",
-        requestId
-      });
+      return res.status(400).json({ success: false, error: "Missing action.type", requestId });
     }
 
     const executionIntent = await handleAction(input, requestId);
@@ -101,13 +81,9 @@ app.post("/action", authMiddleware, async (req, res) => {
   } catch (err) {
     let statusCode = 500;
 
-    if (err.message.startsWith("INVALID")) {
-      statusCode = 400;
-    } else if (err.message === "Requires override") {
-      statusCode = 400;
-    } else if (!err.message.startsWith("SYSTEM_ERROR")) {
-      statusCode = 400;
-    }
+    if (err.message.startsWith("INVALID")) statusCode = 400;
+    else if (err.message === "Requires override") statusCode = 400;
+    else if (!err.message.startsWith("SYSTEM_ERROR")) statusCode = 400;
 
     res.status(statusCode).json({
       success: false,
@@ -117,7 +93,7 @@ app.post("/action", authMiddleware, async (req, res) => {
   }
 });
 
-// 📥 RECEIVE EXECUTION RESULT
+// 📥 RESULT API
 app.post("/audit-result", async (req, res) => {
   try {
     const { requestId, status, result, error } = req.body;
@@ -129,27 +105,16 @@ app.post("/audit-result", async (req, res) => {
       });
     }
 
-    await updateAuditResult({
-      requestId,
-      status,
-      result,
-      error
-    });
+    await updateAuditResult({ requestId, status, result, error });
 
-    return res.json({
-      success: true,
-      requestId
-    });
+    res.json({ success: true, requestId });
 
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 🔍 GET recent audits
+// 🔍 RECENT
 app.get("/audit", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -158,32 +123,21 @@ app.get("/audit", authMiddleware, async (req, res) => {
       .order("timestamp", { ascending: false })
       .limit(10);
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    if (error) throw new Error(error.message);
 
-    res.json({
-      success: true,
-      data: data || []
-    });
+    res.json({ success: true, data: data || [] });
 
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 📊 NEW: AUDIT SUMMARY (DECISION INTELLIGENCE)
-const { getAll } = require("./auditService"); // ✅ ADD THIS IMPORT
-
+// 📊 ✅ FINAL SUMMARY WITH TREND
 app.get("/audit/summary", authMiddleware, async (req, res) => {
   try {
-    const days = Number(req.query.days || 7); // ✅ read filter
+    const range = req.query.range || "7d";
 
-    const logs = await getAll({ days });      // ✅ USE TIME FILTER
-    const summary = await getAuditSummary(logs);
+    const summary = await getAuditSummaryWithTrend(range); // 🔥 KEY CHANGE
 
     res.json({
       success: true,
@@ -197,7 +151,8 @@ app.get("/audit/summary", authMiddleware, async (req, res) => {
     });
   }
 });
-// 🔍 GET single audit
+
+// 🔍 SINGLE
 app.get("/audit/:requestId", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -207,26 +162,17 @@ app.get("/audit/:requestId", authMiddleware, async (req, res) => {
       .single();
 
     if (error || !data) {
-      return res.status(404).json({
-        success: false,
-        error: "Not found"
-      });
+      return res.status(404).json({ success: false, error: "Not found" });
     }
 
-    res.json({
-      success: true,
-      data
-    });
+    res.json({ success: true, data });
 
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 🚀 START SERVER
+// 🚀 START
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, "0.0.0.0", () => {
