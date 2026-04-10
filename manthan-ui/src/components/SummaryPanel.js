@@ -1,13 +1,9 @@
 export default function SummaryPanel({ data, selected, onSelect }) {
+  if (!data) return null;
+
   const allow = data.status_breakdown?.ALLOW || 0;
   const block = data.status_breakdown?.BLOCK || 0;
-  const override =
-    data.status_breakdown?.REQUIRE_OVERRIDE ||
-     ||
-    0;
-
-  const total = data.total_requests || 0;
-  const unknown = total - (allow + block + override);
+  const override = data.status_breakdown?.REQUIRE_OVERRIDE || 0;
 
   return (
     <div className="card compact">
@@ -25,14 +21,14 @@ export default function SummaryPanel({ data, selected, onSelect }) {
           className={`pill green ${selected === "ALLOW" ? "active" : ""}`}
           onClick={() => onSelect("ALLOW")}
         >
-          Allowed
+          Allowed ({allow})
         </span>
 
         <span
           className={`pill red ${selected === "BLOCK" ? "active" : ""}`}
           onClick={() => onSelect("BLOCK")}
         >
-          Blocked
+          Blocked ({block})
         </span>
 
         <span
@@ -41,12 +37,8 @@ export default function SummaryPanel({ data, selected, onSelect }) {
           }`}
           onClick={() => onSelect("REQUIRE_OVERRIDE")}
         >
-          Override
+          Override ({override})
         </span>
-
-        {unknown > 0 && (
-          <span className="pill gray">Unclassified</span>
-        )}
       </div>
     </div>
   );

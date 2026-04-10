@@ -46,7 +46,7 @@ async function handleAction(input, requestId) {
       requestId,
       input,
       execution_input: null,
-      status: "FAILED",
+      status: "BLOCK", // ✅ FIX: no FAILED
       error: err.message,
       override: input.override || null
     });
@@ -58,7 +58,7 @@ async function handleAction(input, requestId) {
     // STEP 2: ENFORCEMENT + OVERRIDE
     if (decision.status === "BLOCK") {
       if (input.override) {
-        decision.status = "REQUIRE_OVERRIDE"; // 🔥 CORE FIX
+        decision.status = "REQUIRE_OVERRIDE";
         console.log(`[${requestId}] ⚠️ OVERRIDE APPLIED`);
       } else {
         enforce(decision);
@@ -80,7 +80,19 @@ async function handleAction(input, requestId) {
       }
     };
 
-    // STEP 5: AUDIT (ONLY TRUTH)
+    // 🔒 FINAL STATUS GUARD
+    const VALID = ["ALLOW", "BLOCK", "REQUIRE_OVERRIDE"];
+
+    if (!VALID.includes(decision.status)) {
+      console.error(`[${requestId}] ❌ INVALID DECISION STATUS`, {
+        status: decision.status,
+        decision
+      });
+
+      throw new Error(`Invalid decision.status: ${decision.status}`);
+    }
+
+    // STEP 5: AUDIT
     await logAudit({
       requestId,
       input,
@@ -96,12 +108,16 @@ async function handleAction(input, requestId) {
   } catch (err) {
     const executionInput = buildExecutionInput(input);
 
+    const VALID = ["ALLOW", "BLOCK", "REQUIRE_OVERRIDE"];
+
     await logAudit({
       requestId,
       input,
       execution_input: executionInput,
       decision,
-      status: decision?.status || "FAILED",
+      status: VALID.includes(decision?.status)
+        ? decision.status
+        : "BLOCK", // ✅ FIX: deterministic fallback
       error: err.message,
       override: input.override || null
     });

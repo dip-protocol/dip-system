@@ -3,13 +3,9 @@ export default function HeroStats({ data }) {
 
   const allow = data.status_breakdown?.ALLOW || 0;
   const block = data.status_breakdown?.BLOCK || 0;
-  const override =
-    data.status_breakdown?.REQUIRE_OVERRIDE ||
-     ||
-    0;
+  const override = data.status_breakdown?.REQUIRE_OVERRIDE || 0;
 
   const total = data.total_requests || 0;
-  const unknown = total - (allow + block + override);
 
   return (
     <div className="hero">
@@ -32,13 +28,6 @@ export default function HeroStats({ data }) {
         <div className="hero-number">{override}</div>
         <div className="hero-label">Override</div>
       </div>
-
-      {unknown > 0 && (
-        <div className="hero-card gray">
-          <div className="hero-number">{unknown}</div>
-          <div className="hero-label">Unclassified</div>
-        </div>
-      )}
     </div>
   );
 }
