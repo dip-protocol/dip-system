@@ -347,10 +347,13 @@ app.get("/audit/:requestId", authMiddleware, async (req, res) => {
 // -----------------------------
 // START
 // -----------------------------
-const PORT = process.env.PORT || 8080;
+if (!process.env.PORT) {
+  throw new Error("PORT not set");
+}
+
+const PORT = process.env.PORT;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
 });
-
 process.stdin.resume();
