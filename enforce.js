@@ -1,6 +1,8 @@
 function enforce(decision) {
   if (!decision || !decision.status) {
-    throw new Error("Invalid decision");
+    const err = new Error("Invalid decision");
+    err.code = "INVALID_DECISION";
+    throw err;
   }
 
   if (decision.status === "ALLOW") return;
@@ -10,14 +12,20 @@ function enforce(decision) {
       decision.violations?.map(v => v.message).join(", ") ||
       "Blocked by policy";
 
-    throw new Error(message);
+    const err = new Error(message);
+    err.code = "BLOCK";
+    throw err;
   }
 
   if (decision.status === "REQUIRE_OVERRIDE") {
-    throw new Error("Requires override");
+    const err = new Error("Requires override");
+    err.code = "REQUIRE_OVERRIDE";
+    throw err;
   }
 
-  throw new Error("Unknown decision status");
+  const err = new Error("Unknown decision status");
+  err.code = "UNKNOWN_STATUS";
+  throw err;
 }
 
 module.exports = { enforce };

@@ -19,9 +19,9 @@ async function findByRequestId(requestId) {
   return data;
 }
 
-// 📜 get logs with RANGE FILTER
-async function getAll(range = "7d") {
-  let fromDate = new Date();
+// 📜 get logs with RANGE FILTER (DETERMINISTIC READY)
+async function getAll(range = "7d", now = new Date()) {
+  let fromDate = new Date(now);
 
   if (range === "1d") {
     fromDate.setDate(fromDate.getDate() - 1);
@@ -76,7 +76,7 @@ async function getAuditSummary(auditLogs) {
     const trace = log.decision?.meta?.trace || [];
 
     for (const t of trace) {
-      const ruleId = t.rule_id;
+      const ruleId = t.rule_id || "UNKNOWN_RULE"; // ✅ FIX
 
       if (!summary.rule_stats[ruleId]) {
         summary.rule_stats[ruleId] = {
@@ -109,10 +109,8 @@ function calculateTrend(current, previous) {
   };
 }
 
-// 📊 SUMMARY WITH TREND
-async function getAuditSummaryWithTrend(range = "7d") {
-  const now = new Date();
-
+// 📊 SUMMARY WITH TREND (DETERMINISTIC READY)
+async function getAuditSummaryWithTrend(range = "7d", now = new Date()) {
   const mapDays = {
     "1d": 1,
     "7d": 7,
@@ -121,8 +119,8 @@ async function getAuditSummaryWithTrend(range = "7d") {
     "5y": 365 * 5
   };
 
-  let currentFrom = new Date();
-  let previousFrom = new Date();
+  let currentFrom = new Date(now);
+  let previousFrom = new Date(now);
 
   if (range === "all") {
     currentFrom = new Date(0);
@@ -130,8 +128,8 @@ async function getAuditSummaryWithTrend(range = "7d") {
   } else {
     const days = mapDays[range] || 7;
 
-    currentFrom.setDate(now.getDate() - days);
-    previousFrom.setDate(now.getDate() - (days * 2));
+    currentFrom.setDate(currentFrom.getDate() - days);
+    previousFrom.setDate(previousFrom.getDate() - (days * 2));
   }
 
   const { data, error } = await supabase
@@ -164,6 +162,9 @@ async function getAuditSummaryWithTrend(range = "7d") {
 
   for (const log of data || []) {
     const ts = new Date(log.timestamp);
+
+    // ✅ FIX: invalid timestamp guard
+    if (isNaN(ts)) continue;
 
     if (ts >= currentFrom) {
       currentLogs.push(log);

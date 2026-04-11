@@ -13,7 +13,7 @@ async function logAudit(entry) {
     try {
       const record = {
         request_id: entry.requestId,
-        timestamp: new Date().toISOString(),
+        timestamp: entry.timestamp || new Date().toISOString(), // ✅ FIX
 
         input: safe(entry.input),
         execution_input: safe(entry.execution_input),
@@ -29,10 +29,7 @@ async function logAudit(entry) {
         .insert([record])
         .select();
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
+      if (error) throw new Error(error.message);
       if (!data || data.length === 0) {
         throw new Error("Audit insert returned empty");
       }
@@ -47,7 +44,6 @@ async function logAudit(entry) {
           requestId: entry.requestId,
           error: err.message
         });
-
         throw err;
       }
     }
@@ -65,8 +61,8 @@ async function updateAuditResult({ requestId, status, result, error }) {
 
       const updatePayload = {
         status: safe(status),
-        result: safe(result) || {},
-        error: safe(error) || ""
+        result: result !== undefined ? result : null, // ✅ FIX
+        error: error !== undefined ? error : null     // ✅ FIX
       };
 
       const { data, error: dbError } = await supabase
@@ -75,10 +71,7 @@ async function updateAuditResult({ requestId, status, result, error }) {
         .eq("request_id", requestId)
         .select();
 
-      if (dbError) {
-        throw new Error(dbError.message);
-      }
-
+      if (dbError) throw new Error(dbError.message);
       if (!data || data.length === 0) {
         throw new Error("Audit record not found");
       }
@@ -93,7 +86,6 @@ async function updateAuditResult({ requestId, status, result, error }) {
           requestId,
           error: err.message
         });
-
         throw err;
       }
     }
