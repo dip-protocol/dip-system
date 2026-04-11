@@ -1,72 +1,94 @@
-const axios = require("axios");
+const BASE_URL = (process.env.BASE_URL || "https://dip-system.fly.dev").replace(/\/$/, "");
+const API_KEY = process.env.API_KEY || "Charak@987";
 
-const BASE_URL = "http://localhost:8080";
-const API_KEY = "your-api-key"; // 🔑 replace
+async function request(path, { method = "GET", body } = {}) {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
+
+  if (!response.ok) {
+    const error = new Error(`HTTP ${response.status}`);
+    error.response = { status: response.status, data };
+    throw error;
+  }
+
+  return data;
+}
+
+function validateActionBody(body) {
+  if ("data" in body) {
+    throw new Error("INVALID CLIENT: Use 'payload' instead of 'data'");
+  }
+}
 
 async function run() {
+  if (!API_KEY) {
+    throw new Error("Missing API_KEY environment variable");
+  }
+
   console.log("\n==============================");
   console.log("🧠 MANTHAN SYSTEM TEST");
   console.log("==============================\n");
 
-  let token, requestId;
+  let token;
 
-  // -----------------------------
   // 1. FUNCTIONALITY TEST
-  // -----------------------------
   console.log("1️⃣ FUNCTIONALITY TEST");
 
-  const actionRes = await axios.post(
-    `${BASE_URL}/action`,
-    {
-      orgId: "org1",
-      systemId: "sys1",
-      action: { type: "CREATE_USER" },
-      data: { userId: "user123" },
-      context: { role: "ADMIN" }
-    },
-    { headers: { "x-api-key": API_KEY } }
-  );
+  const actionBody = {
+    orgId: "orgA",
+    systemId: "billing",
+    action: { type: "CREATE_USER" },
+    payload: { userId: "user123" },
+    context: { role: "ADMIN" }
+  };
 
-  token = actionRes.data.execution_token;
-  requestId = actionRes.data.requestId;
+  validateActionBody(actionBody);
+
+  const actionRes = await request("/action", {
+    method: "POST",
+    body: actionBody
+  });
+
+  token = actionRes.execution_token;
 
   if (!token) throw new Error("❌ No execution token");
 
   console.log("✅ Action created");
 
-  // -----------------------------
   // 2. VALID EXECUTION
-  // -----------------------------
   console.log("\n2️⃣ VALID EXECUTION");
 
-  const execRes = await axios.post(
-    `${BASE_URL}/execute`,
-    token,
-    { headers: { "x-api-key": API_KEY } }
-  );
+  const execRes = await request("/execute", {
+    method: "POST",
+    body: token
+  });
 
-  if (!execRes.data.success) throw new Error("❌ Execution failed");
+  if (!execRes.success) throw new Error("❌ Execution failed");
 
   console.log("✅ Execution succeeded");
 
-  // -----------------------------
   // 3. REPLAY ATTACK
-  // -----------------------------
   console.log("\n3️⃣ REPLAY ATTACK TEST");
 
   try {
-    await axios.post(`${BASE_URL}/execute`, token, {
-      headers: { "x-api-key": API_KEY }
-    });
-
+    await request("/execute", { method: "POST", body: token });
     console.log("❌ Replay allowed (FAIL)");
   } catch {
     console.log("✅ Replay blocked");
   }
 
-  // -----------------------------
   // 4. PAYLOAD TAMPERING
-  // -----------------------------
   console.log("\n4️⃣ PAYLOAD TAMPERING TEST");
 
   const tampered = {
@@ -75,18 +97,13 @@ async function run() {
   };
 
   try {
-    await axios.post(`${BASE_URL}/execute`, tampered, {
-      headers: { "x-api-key": API_KEY }
-    });
-
+    await request("/execute", { method: "POST", body: tampered });
     console.log("❌ Tampering allowed (FAIL)");
   } catch {
     console.log("✅ Tampering blocked");
   }
 
-  // -----------------------------
   // 5. SIGNATURE FORGERY
-  // -----------------------------
   console.log("\n5️⃣ SIGNATURE FORGERY TEST");
 
   const forged = {
@@ -95,85 +112,71 @@ async function run() {
   };
 
   try {
-    await axios.post(`${BASE_URL}/execute`, forged, {
-      headers: { "x-api-key": API_KEY }
-    });
-
+    await request("/execute", { method: "POST", body: forged });
     console.log("❌ Forgery allowed (FAIL)");
   } catch {
     console.log("✅ Forgery blocked");
   }
 
-  // -----------------------------
-  // 6. OVERRIDE FLOW TEST
-  // -----------------------------
+  // 6. OVERRIDE TEST
   console.log("\n6️⃣ OVERRIDE TEST");
 
   try {
-    await axios.post(
-      `${BASE_URL}/action`,
-      {
-        orgId: "org1",
-        systemId: "sys1",
-        action: { type: "DELETE_USER" },
-        data: { userId: "restricted-user" },
-        context: { role: "USER" } // should trigger override
-      },
-      { headers: { "x-api-key": API_KEY } }
-    );
+    const overrideBody = {
+      orgId: "orgA",
+      systemId: "billing",
+      action: { type: "DELETE_USER" },
+      payload: { userId: "restricted-user" },
+      context: { role: "USER" }
+    };
+
+    validateActionBody(overrideBody);
+
+    await request("/action", {
+      method: "POST",
+      body: overrideBody
+    });
 
     console.log("❌ Override not enforced (FAIL)");
-  } catch (err) {
+  } catch {
     console.log("✅ Override correctly required");
   }
 
-  // -----------------------------
   // 7. AUDIT CHECK
-  // -----------------------------
   console.log("\n7️⃣ AUDIT CHECK");
 
-  const auditRes = await axios.get(`${BASE_URL}/audit`, {
-    headers: { "x-api-key": API_KEY }
-  });
+  const auditRes = await request("/audit");
 
-  if (!auditRes.data.data.length) {
+  if (!auditRes?.data?.length) {
     console.log("❌ Audit missing");
   } else {
     console.log("✅ Audit recorded");
   }
 
-  // -----------------------------
-  // 8. DETERMINISM CHECK (BASIC)
-  // -----------------------------
+  // 8. DETERMINISM CHECK
   console.log("\n8️⃣ DETERMINISM CHECK");
 
-  const res1 = await axios.post(
-    `${BASE_URL}/action`,
-    {
-      orgId: "org1",
-      systemId: "sys1",
-      action: { type: "CREATE_USER" },
-      data: { userId: "same-user" },
-      context: { role: "ADMIN" }
-    },
-    { headers: { "x-api-key": API_KEY } }
-  );
+  const detBody = {
+    orgId: "orgA",
+    systemId: "billing",
+    action: { type: "CREATE_USER" },
+    payload: { userId: "same-user" },
+    context: { role: "ADMIN" }
+  };
 
-  const res2 = await axios.post(
-    `${BASE_URL}/action`,
-    {
-      orgId: "org1",
-      systemId: "sys1",
-      action: { type: "CREATE_USER" },
-      data: { userId: "same-user" },
-      context: { role: "ADMIN" }
-    },
-    { headers: { "x-api-key": Charak@987 } }
-  );
+  validateActionBody(detBody);
 
-  if (
-    res1.data.execution_token.action === res2.data.execution_token.action
-  ) {
+  const res1 = await request("/action", {
+    method: "POST",
+    body: detBody
+  });
+
+  const res2 = await request("/action", {
+    method: "POST",
+    body: detBody
+  });
+
+  if (res1?.execution_token?.action === res2?.execution_token?.action) {
     console.log("✅ Deterministic decision behavior");
   } else {
     console.log("❌ Non-deterministic behavior");
@@ -185,5 +188,6 @@ async function run() {
 }
 
 run().catch(err => {
-  console.error("🔥 TEST FAILED:", err.message);
+  console.error("🔥 TEST FAILED:", err.response?.data || err.message);
+  process.exit(1);
 });

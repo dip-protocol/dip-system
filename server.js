@@ -1,3 +1,4 @@
+require("dotenv").config();
 console.log("SERVER_BOOT_V2");
 
 const express = require("express");
@@ -42,6 +43,13 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "manthan",
+    timestamp: new Date().toISOString()
+  });
+});
 
 // 🔒 CONTENT-TYPE GUARD
 app.use((req, res, next) => {

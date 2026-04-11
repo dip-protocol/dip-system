@@ -1,3 +1,4 @@
+require("dotenv").config();
 const crypto = require("crypto");
 
 // 🔐 MUST be set (no fallback allowed)
