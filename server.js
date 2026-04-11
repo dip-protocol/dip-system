@@ -1,3 +1,5 @@
+console.log("SERVER_BOOT_V2");
+
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
