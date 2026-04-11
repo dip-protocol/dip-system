@@ -5,33 +5,11 @@ const { loadRules } = require("./rules/ruleLoader");
 const { enforce } = require("./enforce");
 const { logAudit } = require("./audit");
 const crypto = require("crypto");
+const { computeDecisionHash } = require("./utils/hash");
 
 // -----------------------------
 // CANONICAL HASHING (DETERMINISTIC)
 // -----------------------------
-function canonicalize(obj) {
-  if (Array.isArray(obj)) return obj.map(canonicalize);
-
-  if (obj && typeof obj === "object") {
-    return Object.keys(obj)
-      .sort()
-      .reduce((acc, key) => {
-        acc[key] = canonicalize(obj[key]);
-        return acc;
-      }, {});
-  }
-
-  return obj;
-}
-
-function computeDecisionHash(action, payload) {
-  const canonical = canonicalize({ action, payload });
-
-  return crypto
-    .createHash("sha256")
-    .update(JSON.stringify(canonical))
-    .digest("hex");
-}
 
 // -----------------------------
 // INPUT NORMALIZATION (DETERMINISTIC)

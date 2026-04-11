@@ -62,7 +62,7 @@ function signExecutionIntent(intent, requestId) {
 async function verifyExecutionToken(token) {
   if (!token) return false;
 
-  await connectRedis();
+  const redis = await connectRedis();
 
   const { signature, ...payload } = token;
 
@@ -97,12 +97,12 @@ async function verifyExecutionToken(token) {
     return false;
   }
 
-  const key = `exec_token:${signature}`;
+  const key = `exec_token:${payload.requestId}:${payload.decisionHash}`;
 
   // 🔁 Atomic single-use enforcement
-  const result = await client.set(key, "used", {
-    NX: true
-  });
+  const result = await redis.set(key, "used", {
+  NX: true
+});
 
   if (result === null) return false;
 
