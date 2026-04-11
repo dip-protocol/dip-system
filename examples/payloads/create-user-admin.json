@@ -1,0 +1,11 @@
+﻿{
+  "action": { "type": "CREATE_USER" },
+  "orgId": "orgA",
+  "systemId": "billing",
+  "payload": {
+    "userId": "user-1"
+  },
+  "context": {
+    "role": "admin"
+  }
+}

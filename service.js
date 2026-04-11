@@ -30,6 +30,9 @@ function normalizeInput(input) {
 // VALIDATION
 // -----------------------------
 function validateInput(input) {
+if (input.data) {
+  throw new Error("INVALID: 'data' field not allowed. Use 'payload'");
+}
   if (!input || !input.action || !input.context) {
     throw new Error("INVALID: Invalid input structure");
   }
@@ -39,23 +42,23 @@ function validateInput(input) {
   }
 
   if (input.action.type === "DELETE_USER") {
-    if (!input.data?.userId) {
-      throw new Error("INVALID: Missing userId");
-    }
+    if (!input.payload?.userId) {
+  throw new Error("INVALID: Missing userId");
+}
   }
 
   if (input.action.type === "CREATE_USER") {
-    if (!input.data?.userId) {
-      throw new Error("INVALID: Missing userId");
-    }
+  if (!input.payload?.userId) {
+    throw new Error("INVALID: Missing userId");
   }
+}
 }
 
 // -----------------------------
 // EXECUTION INPUT
 // -----------------------------
 function buildExecutionInput(input) {
-  const userId = input?.data?.userId ?? input?.userId ?? null;
+  const userId = input?.payload?.userId ?? null;
 
   return {
     ...input,

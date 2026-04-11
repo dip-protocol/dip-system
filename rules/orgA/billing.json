@@ -1,19 +1,151 @@
 [
   {
-    "id": "ONLY_ADMIN_CAN_DELETE",
-    "when": { "action.type": "DELETE_USER" },
-    "if": { "context.role": { "not_equals": "admin" } },
+    "id": "ONLY_ADMIN_CAN_CREATE_USER",
+    "when": {
+      "action.type": "CREATE_USER"
+    },
+    "if": {
+      "context.role": {
+        "not_equals": "admin"
+      }
+    },
+    "then": {
+      "message": "Only admin can create users",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "ONLY_ADMIN_CAN_DELETE_USER",
+    "when": {
+      "action.type": "DELETE_USER"
+    },
+    "if": {
+      "context.role": {
+        "not_equals": "admin"
+      }
+    },
     "then": {
       "message": "Only admin can delete users",
       "enforcement": "BLOCK"
     }
   },
   {
-    "id": "ONLY_ADMIN_CAN_CREATE",
-    "when": { "action.type": "CREATE_USER" },
-    "if": { "context.role": { "not_equals": "admin" } },
+    "id": "ONLY_ADMIN_CAN_UPDATE_ROLE",
+    "when": {
+      "action.type": "UPDATE_ROLE"
+    },
+    "if": {
+      "context.role": {
+        "not_equals": "admin"
+      }
+    },
     "then": {
-      "message": "Only admin can create users",
+      "message": "Only admin can update roles",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "BLOCK_GUEST_USER_CREATION",
+    "when": {
+      "action.type": "CREATE_USER"
+    },
+    "if": {
+      "payload.role": {
+        "equals": "guest"
+      }
+    },
+    "then": {
+      "message": "Guest users cannot be created",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "BLOCK_SELF_ROLE_CHANGE",
+    "when": {
+      "action.type": "UPDATE_ROLE"
+    },
+    "if": {
+      "payload.userId": {
+        "equals": "self"
+      }
+    },
+    "then": {
+      "message": "Users cannot change their own role",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "BLOCK_TEST_USER_DELETION",
+    "when": {
+      "action.type": "DELETE_USER"
+    },
+    "if": {
+      "payload.userId": {
+        "equals": "test-user"
+      }
+    },
+    "then": {
+      "message": "Test user cannot be deleted",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "ONLY_ADMIN_CAN_CREATE_INVOICE",
+    "when": {
+      "action.type": "CREATE_INVOICE"
+    },
+    "if": {
+      "context.role": {
+        "not_equals": "admin"
+      }
+    },
+    "then": {
+      "message": "Only admin can create invoices",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "BLOCK_ZERO_AMOUNT_INVOICE",
+    "when": {
+      "action.type": "CREATE_INVOICE"
+    },
+    "if": {
+      "payload.amount": {
+        "equals": 0
+      }
+    },
+    "then": {
+      "message": "Invoice amount cannot be zero",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "ONLY_ADMIN_CAN_REFUND",
+    "when": {
+      "action.type": "REFUND_PAYMENT"
+    },
+    "if": {
+      "context.role": {
+        "not_equals": "admin"
+      }
+    },
+    "then": {
+      "message": "Only admin can issue refunds",
+      "enforcement": "BLOCK"
+    }
+  },
+  {
+    "id": "BLOCK_NEGATIVE_PAYMENT",
+    "when": {
+      "action.type": "PROCESS_PAYMENT"
+    },
+    "if": {
+      "payload.amount": {
+        "equals": -1
+      }
+    },
+    "then": {
+      "message": "Payment amount cannot be negative",
       "enforcement": "BLOCK"
     }
   }
