@@ -1,6 +1,6 @@
 const { createClient } = require("redis");
 
-let client = null;
+let clientInstance = null;
 
 // -----------------------------
 // GET REDIS CLIENT (LAZY INIT)
@@ -10,17 +10,17 @@ function getRedisClient() {
     throw new Error("REDIS_URL not set");
   }
 
-  if (!client) {
-    client = createClient({
+  if (!clientInstance) {
+    clientInstance = createClient({
       url: process.env.REDIS_URL
     });
 
-    client.on("error", (err) => {
+    clientInstance.on("error", (err) => {
       console.error("Redis error:", err);
     });
   }
 
-  return client;
+  return clientInstance;
 }
 
 // -----------------------------
