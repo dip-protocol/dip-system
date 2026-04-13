@@ -1,3 +1,6 @@
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yamljs");
+
 require("dotenv").config();
 console.log("SERVER_BOOT_V2");
 
@@ -13,6 +16,9 @@ const { updateAuditResult } = require("./audit");
 const { getAuditSummaryWithTrend } = require("./auditService");
 
 const app = express();
+const swaggerDocument = YAML.load(
+  path.join(__dirname, "docs", "openapi.yaml")
+);
 
 // -----------------------------
 // CANONICALIZE (DETERMINISTIC)
@@ -361,6 +367,7 @@ app.get("/audit/:requestId", authMiddleware, async (req, res) => {
 
 
 const PORT = process.env.PORT || 3000;
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);

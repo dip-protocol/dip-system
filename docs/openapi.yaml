@@ -1,0 +1,134 @@
+openapi: 3.0.0
+info:
+title: Manthan Decision API
+version: 0.2.0
+description: Deterministic Decision Execution System
+
+servers:
+
+* url: https://dip-system.fly.dev
+
+paths:
+
+/action:
+post:
+summary: Generate Execution Token
+description: Creates a signed execution token after validating decision rules
+security:
+- ApiKeyAuth: []
+requestBody:
+required: true
+content:
+application/json:
+schema:
+type: object
+required: [systemId, orgId, action, payload, context]
+properties:
+systemId:
+type: string
+orgId:
+type: string
+action:
+type: object
+properties:
+type:
+type: string
+example: CREATE_USER
+payload:
+type: object
+properties:
+userId:
+type: string
+context:
+type: object
+properties:
+actor:
+type: string
+role:
+type: string
+responses:
+"200":
+description: Execution token generated
+content:
+application/json:
+schema:
+type: object
+properties:
+success:
+type: boolean
+requestId:
+type: string
+execution_token:
+type: object
+
+/execute:
+post:
+summary: Execute Approved Action
+description: Verifies execution token and performs action
+security:
+- ApiKeyAuth: []
+requestBody:
+required: true
+content:
+application/json:
+schema:
+type: object
+description: Execution token returned from /action
+responses:
+"200":
+description: Execution successful
+content:
+application/json:
+schema:
+type: object
+properties:
+success:
+type: boolean
+requestId:
+type: string
+result:
+type: object
+
+/audit:
+get:
+summary: Get Recent Audit Logs
+security:
+- ApiKeyAuth: []
+responses:
+"200":
+description: List of audit logs
+
+/audit/summary:
+get:
+summary: Get Audit Summary
+parameters:
+- in: query
+name: range
+schema:
+type: string
+example: 7d
+responses:
+"200":
+description: Summary data
+
+/audit/{requestId}:
+get:
+summary: Get Single Audit Trace
+parameters:
+- in: path
+name: requestId
+required: true
+schema:
+type: string
+responses:
+"200":
+description: Audit trace
+"404":
+description: Not found
+
+components:
+securitySchemes:
+ApiKeyAuth:
+type: apiKey
+in: header
+name: x-api-key
