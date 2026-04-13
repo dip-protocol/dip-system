@@ -382,11 +382,9 @@ app.get("/audit/:requestId", authMiddleware, async (req, res) => {
 
 
 const PORT = process.env.PORT || 3000;
-app.get("/docs-site/:path(*)", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "docs-site", "index.html")
-  );
-});
+app.use("/docs-site", express.static(
+  path.join(__dirname, "public", "docs-site")
+));
 app.use(express.static(path.join(__dirname, "public")));
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
