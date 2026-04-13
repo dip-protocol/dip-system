@@ -2,116 +2,40 @@
 <html>
 <head>
   <title>Manthan Docs</title>
-
   <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      display: flex;
-    }
-
-    .sidebar {
-      width: 250px;
-      background: #111;
-      color: white;
-      height: 100vh;
-      padding: 20px;
-    }
-
-    .sidebar h2 {
-      font-size: 18px;
-      margin-bottom: 20px;
-    }
-
-    .sidebar div {
-      margin: 10px 0;
-      cursor: pointer;
-      color: #ccc;
-    }
-
-    .sidebar div:hover {
-      color: white;
-    }
-
-    .content {
-      flex: 1;
-      padding: 40px;
-      max-width: 100%;
-    }
-
-    iframe {
-      width: 100%;
-      height: 90vh;
-      border: none;
-    }
-
-    pre {
-      background: #111;
-      color: #0f0;
-      padding: 12px;
-    }
+    body { font-family: Arial; margin: 0; display: flex; }
+    .sidebar { width: 250px; background: #111; color: white; padding: 20px; }
+    .content { flex: 1; padding: 20px; }
+    a { color: #0f0; display: block; margin: 10px 0; cursor: pointer; }
+    pre { background: #000; color: #0f0; padding: 10px; overflow: auto; }
   </style>
 </head>
-
 <body>
 
-  <div class="sidebar">
-    <h2>Manthan Docs</h2>
+<div class="sidebar">
+  <h3>Manthan Docs</h3>
+  <a onclick="loadDoc('01-system-overview.md')">Overview</a>
+  <a onclick="loadDoc('02-backend-and-api.md')">API</a>
+  <a onclick="loadDoc('03-decision-core-rules-and-audit.md')">Decision</a>
+  <a onclick="loadDoc('04-frontend-and-ops.md')">Ops</a>
+</div>
 
-    <div onclick="navigate('')">Overview</div>
-    <div onclick="navigate('api')">API Guide</div>
-    <div onclick="navigate('architecture')">Architecture</div>
-    <div onclick="navigate('security')">Security</div>
+<div class="content" id="content">
+  Loading...
+</div>
 
-    <hr>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <div onclick="navigate('explorer')">API Explorer</div>
-  </div>
+<script>
+async function loadDoc(file) {
+  const res = await fetch("/docs-content/" + file);
+  const text = await res.text();
+  document.getElementById("content").innerHTML = marked.parse(text);
+}
 
-  <div class="content">
-    <div id="content">Loading...</div>
-  </div>
-
-  <script>
-    const routes = {
-      "": "README.md",
-      "api": "API.md",
-      "architecture": "ARCHITECTURE.md",
-      "security": "SECURITY.md"
-    };
-
-    async function loadDoc(file) {
-      const res = await fetch("/docs-content/" + file);
-      const html = await res.text();
-      document.getElementById("content").innerHTML = html;
-    }
-
-    function loadSwagger() {
-      document.getElementById("content").innerHTML =
-        '<iframe src="/docs"></iframe>';
-    }
-
-    function navigate(path) {
-      history.pushState({}, "", "/docs-site/" + path);
-      handleRoute();
-    }
-
-    function handleRoute() {
-      const path = window.location.pathname.replace("/docs-site/", "");
-
-      if (path === "explorer") {
-        loadSwagger();
-        return;
-      }
-
-      const file = routes[path] || "README.md";
-      loadDoc(file);
-    }
-
-    window.onpopstate = handleRoute;
-
-    handleRoute();
-  </script>
+// default load
+loadDoc("01-system-overview.md");
+</script>
 
 </body>
 </html>
