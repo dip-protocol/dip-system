@@ -382,7 +382,7 @@ app.get("/audit/:requestId", authMiddleware, async (req, res) => {
 
 
 const PORT = process.env.PORT || 3000;
-app.get("/docs-site/*", (req, res) => {
+app.get("/docs-site/:path(*)", (req, res) => {
   res.sendFile(
     path.join(__dirname, "public", "docs-site", "index.html")
   );

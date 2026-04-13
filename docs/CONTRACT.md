@@ -1,48 +1,24 @@
-\# Contract Model
-
-
+# Contract Model
 
 Manthan enforces decision contracts:
 
+- Input → structured request  
+- Output → execution token  
+- Enforcement → deterministic validation  
 
+---
 
-\* Input → structured request
+## Contract Properties
 
-\* Output → execution token
+- Deterministic  
+- Verifiable  
+- Immutable  
+- Auditable  
 
-\* Enforcement → deterministic validation
+---
 
+## Versioning
 
+Contracts evolve via version upgrades.  
 
-\---
-
-
-
-\## Contract Properties
-
-
-
-\* Deterministic
-
-\* Verifiable
-
-\* Immutable
-
-\* Auditable
-
-
-
-\---
-
-
-
-\## Versioning
-
-
-
-Contracts evolve via version upgrades
-
-No runtime mutation allowed
-
-
-
+No runtime mutation allowed.

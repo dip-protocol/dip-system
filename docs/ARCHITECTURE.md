@@ -1,76 +1,43 @@
-\# Architecture
+# Architecture
 
+## System Layers
 
+### 1. Decision Layer
 
-\## System Layers
+- Rule evaluation  
+- Deterministic output  
 
+---
 
+### 2. Execution Layer
 
-\### 1. Decision Layer
+- Token verification  
+- Replay protection  
+- Integrity validation  
 
+---
 
+### 3. Audit Layer
 
-\* Rule evaluation
+- Immutable logs  
+- Traceability  
+- Trend analysis  
 
-\* Deterministic output
+---
 
-
-
-\### 2. Execution Layer
-
-
-
-\* Token verification
-
-\* Replay protection
-
-\* Integrity validation
-
-
-
-\### 3. Audit Layer
-
-
-
-\* Immutable logs
-
-\* Traceability
-
-\* Trend analysis
-
-
-
-\---
-
-
-
-\## Flow
-
+## Flow
 
 
 Client → /action → Execution Token
-
 → /execute → Verified Execution
-
 → Audit stored in DB
 
 
+---
 
-\---
+## Security Model
 
-
-
-\## Security Model
-
-
-
-\* SHA256 decision hash
-
-\* Audit binding
-
-\* Signed execution token
-
-\* Redis replay protection
-
-
-
+- SHA256 decision hash  
+- Audit binding  
+- Signed execution token  
+- Redis replay protection  

@@ -1,62 +1,36 @@
-\# Security Model
+# Security Model
 
+## Guarantees
 
+### 1. No Replay
 
-\## Guarantees
+Each token is single-use.
 
+---
 
+### 2. Decision Integrity
 
-\### 1. No Replay
+Hash ensures payload is unchanged.
 
+---
 
+### 3. Audit Binding
 
-Each token is single-use
+Execution is tied to requestId.
 
+---
 
+### 4. Authorization
 
-\### 2. Decision Integrity
+`x-api-key` is required.
 
+---
 
+## Validation Steps
 
-Hash ensures payload is unchanged
-
-
-
-\### 3. Audit Binding
-
-
-
-Execution tied to requestId
-
-
-
-\### 4. Authorization
-
-
-
-x-api-key required
-
-
-
-\---
-
-
-
-\## Validation Steps
-
-
-
-1\. Structure validation
-
-2\. Token verification
-
-3\. Decision hash check
-
-4\. Audit binding check
-
-5\. Context validation
-
-6\. Action whitelist
-
-
-
+1. Structure validation  
+2. Token verification  
+3. Decision hash check  
+4. Audit binding check  
+5. Context validation  
+6. Action whitelist  
