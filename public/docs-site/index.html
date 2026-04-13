@@ -58,14 +58,14 @@
   <div class="sidebar">
     <h2>Manthan Docs</h2>
 
-    <div onclick="loadDoc('README.md')">Overview</div>
-    <div onclick="loadDoc('API.md')">API Guide</div>
-    <div onclick="loadDoc('ARCHITECTURE.md')">Architecture</div>
-    <div onclick="loadDoc('SECURITY.md')">Security</div>
+    <div onclick="navigate('')">Overview</div>
+    <div onclick="navigate('api')">API Guide</div>
+    <div onclick="navigate('architecture')">Architecture</div>
+    <div onclick="navigate('security')">Security</div>
 
     <hr>
 
-    <div onclick="loadSwagger()">API Explorer</div>
+    <div onclick="navigate('explorer')">API Explorer</div>
   </div>
 
   <div class="content">
@@ -73,6 +73,13 @@
   </div>
 
   <script>
+    const routes = {
+      "": "README.md",
+      "api": "API.md",
+      "architecture": "ARCHITECTURE.md",
+      "security": "SECURITY.md"
+    };
+
     async function loadDoc(file) {
       const res = await fetch("/docs-content/" + file);
       const html = await res.text();
@@ -84,8 +91,26 @@
         '<iframe src="/docs"></iframe>';
     }
 
-    // default
-    loadDoc("README.md");
+    function navigate(path) {
+      history.pushState({}, "", "/docs-site/" + path);
+      handleRoute();
+    }
+
+    function handleRoute() {
+      const path = window.location.pathname.replace("/docs-site/", "");
+
+      if (path === "explorer") {
+        loadSwagger();
+        return;
+      }
+
+      const file = routes[path] || "README.md";
+      loadDoc(file);
+    }
+
+    window.onpopstate = handleRoute;
+
+    handleRoute();
   </script>
 
 </body>

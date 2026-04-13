@@ -19,6 +19,7 @@ const app = express();
 const swaggerDocument = YAML.load(
   path.join(__dirname, "docs", "openapi.yaml")
 );
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // -----------------------------
 // CANONICALIZE (DETERMINISTIC)
@@ -48,7 +49,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -285,7 +286,6 @@ if (expectedAuditBinding !== token.auditBinding) {
 const fs = require("fs");
 const { marked } = require("marked");
 
-// Docs content route
 app.get("/docs-content/:file", (req, res) => {
   const filePath = path.join(__dirname, "docs", req.params.file);
 
@@ -382,8 +382,12 @@ app.get("/audit/:requestId", authMiddleware, async (req, res) => {
 
 
 const PORT = process.env.PORT || 3000;
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
+app.get("/docs-site/*", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "docs-site", "index.html")
+  );
+});
+app.use(express.static(path.join(__dirname, "public")));
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
 });process.stdin.resume();
