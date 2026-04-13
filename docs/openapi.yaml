@@ -6,8 +6,7 @@ info:
   description: Decision Infrastructure API for secure, auditable execution
 
 servers:
-  - url: /
-
+  - url: https://dip-system.fly.dev
 security:
   - ApiKeyAuth: []
 

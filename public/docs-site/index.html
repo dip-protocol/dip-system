@@ -76,21 +76,14 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
-let currentFile = "";
-
-// MAIN LOADER
 async function loadDoc(file, event) {
   try {
-    if (file === currentFile) return;
-    currentFile = file;
-
-    // FORCE NO CACHE
     const res = await fetch("/docs-content/" + file + "?t=" + Date.now());
     const text = await res.text();
 
     document.getElementById("content").innerHTML = marked.parse(text);
 
-    // ACTIVE LINK UI
+    // highlight active link
     document.querySelectorAll(".sidebar a").forEach(a => {
       a.classList.remove("active");
     });
@@ -104,7 +97,7 @@ async function loadDoc(file, event) {
   }
 }
 
-// DEFAULT LOAD
+// load default page
 window.onload = () => {
   const firstLink = document.querySelector(".sidebar a");
   loadDoc("01-system-overview.md");
