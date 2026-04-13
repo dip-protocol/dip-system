@@ -58,15 +58,12 @@
 <div class="sidebar">
   <h3>Manthan Docs</h3>
 
-  <a onclick="loadDoc('01-system-overview.md', event)">Overview</a>
-
-  <a onclick="loadDoc('02-backend-and-api.md', event)">API</a>
-
-  <a onclick="loadDoc('FILE_DOCUMENTATION.md', event)">API Explorer</a>
-
-  <a onclick="loadDoc('03-decision-core-rules-and-audit.md', event)">Decision</a>
-
-  <a onclick="loadDoc('04-frontend-and-ops.md', event)">Ops</a>
+  <!-- ✅ FIXED: use "this" instead of event -->
+  <a onclick="loadDoc('01-system-overview.md', this)">Overview</a>
+  <a onclick="loadDoc('02-backend-and-api.md', this)">API</a>
+  <a onclick="loadDoc('FILE_DOCUMENTATION.md', this)">API Explorer</a>
+  <a onclick="loadDoc('03-decision-core-rules-and-audit.md', this)">Decision</a>
+  <a onclick="loadDoc('04-frontend-and-ops.md', this)">Ops</a>
 </div>
 
 <div class="content" id="content">
@@ -76,7 +73,7 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
-async function loadDoc(file, event) {
+async function loadDoc(file, element) {
   try {
     const res = await fetch(window.location.origin + "/docs-content/" + file + "?t=" + Date.now());
     const text = await res.text();
@@ -88,8 +85,8 @@ async function loadDoc(file, event) {
       a.classList.remove("active");
     });
 
-    if (event) {
-      event.target.classList.add("active");
+    if (element) {
+      element.classList.add("active");
     }
 
   } catch (err) {
@@ -97,13 +94,12 @@ async function loadDoc(file, event) {
   }
 }
 
-// load default page
+// default load
 window.onload = () => {
   const firstLink = document.querySelector(".sidebar a");
-  loadDoc("01-system-overview.md");
-  if (firstLink) firstLink.classList.add("active");
+  loadDoc("01-system-overview.md", firstLink);
 };
 </script>
 
 </body>
-</html>s
+</html>
