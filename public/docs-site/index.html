@@ -78,7 +78,7 @@
 <script>
 async function loadDoc(file, event) {
   try {
-    const res = await fetch("/docs-content/" + file + "?t=" + Date.now());
+    const res = await fetch(window.location.origin + "/docs-content/" + file + "?t=" + Date.now());
     const text = await res.text();
 
     document.getElementById("content").innerHTML = marked.parse(text);
@@ -106,4 +106,4 @@ window.onload = () => {
 </script>
 
 </body>
-</html>
+</html>s
