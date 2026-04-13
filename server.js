@@ -1,5 +1,5 @@
 const swaggerUi = require("swagger-ui-express");
-const YAML = require("yamljs");
+const yaml = require("js-yaml");
 
 require("dotenv").config();
 console.log("SERVER_BOOT_V2");
@@ -21,8 +21,8 @@ const app = express();
 // -----------------------------
 // LOAD SWAGGER
 // -----------------------------
-const swaggerDocument = YAML.load(
-  path.join(__dirname, "docs", "openapi.yaml")
+const swaggerDocument = yaml.load(
+  fs.readFileSync(path.join(__dirname, "docs", "openapi.yaml"), "utf8")
 );
 app.get("/openapi.json", (req, res) => {
   res.json(swaggerDocument);
