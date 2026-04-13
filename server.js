@@ -1,3 +1,4 @@
+const path = require("path");
 const swaggerUi = require("swagger-ui-express");
 const yaml = require("js-yaml");
 
@@ -33,7 +34,9 @@ app.get("/openapi.json", (req, res) => {
 // -----------------------------
 
 // ✅ 1. Swagger UI
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(null, {
+  swaggerUrl: "/openapi.json"
+}));
 
 // ✅ 2. Markdown API (CRITICAL POSITION)
 app.get("/docs-content/:file", (req, res) => {
