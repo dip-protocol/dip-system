@@ -282,7 +282,22 @@ if (expectedAuditBinding !== token.auditBinding) {
     });
   }
 });
+const fs = require("fs");
+const { marked } = require("marked");
 
+// Docs content route
+app.get("/docs-content/:file", (req, res) => {
+  const filePath = path.join(__dirname, "docs", req.params.file);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("File not found");
+  }
+
+  const md = fs.readFileSync(filePath, "utf-8");
+  const html = marked(md);
+
+  res.send(html);
+});
 // -----------------------------
 // AUDIT APIs
 // -----------------------------
