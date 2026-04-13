@@ -142,9 +142,12 @@ app.post("/execute", authMiddleware, async (req, res) => {
 
     const { action, payload, requestId, decisionHash } = token;
 
-    if (typeof action !== "string") {
-      return res.status(400).json({ success: false, error: "Invalid action" });
-    }
+// Normalize action
+const actionType = typeof action === "string" ? action : action?.type;
+
+    if (!actionType || typeof actionType !== "string") {
+  return res.status(400).json({ success: false, error: "Invalid action" });
+}
 
     if (!payload || typeof payload !== "object") {
       return res.status(400).json({ success: false, error: "Invalid payload" });
@@ -180,9 +183,9 @@ app.post("/execute", authMiddleware, async (req, res) => {
 
     // 🔐 STEP 2: DECISION BINDING
     const reconstructed = {
-      action,
-      payload
-    };
+  action,   // 🔥 ALWAYS use original token structure
+  payload
+};
 
     const recalculatedHash = crypto
       .createHash("sha256")
@@ -229,7 +232,7 @@ if (expectedAuditBinding !== token.auditBinding) {
       "CREATE_USER"
     ]);
 
-    if (!ALLOWED_ACTIONS.has(action)) {
+    if (!ALLOWED_ACTIONS.has(actionType)) {
       return res.status(403).json({
         success: false,
         error: "Action not allowed"
@@ -241,10 +244,10 @@ if (expectedAuditBinding !== token.auditBinding) {
     // -----------------------------
     let result;
 
-    if (action === "DELETE_USER") {
+    if (actionType === "DELETE_USER") {
       console.log("Deleting user:", payload.userId);
       result = { message: "User deleted", userId: payload.userId };
-    } else if (action === "CREATE_USER") {
+    } else if (actionType === "CREATE_USER") {
       console.log("Creating user:", payload.userId);
       result = { message: "User created", userId: payload.userId };
     }
