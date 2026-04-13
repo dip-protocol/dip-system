@@ -2,13 +2,11 @@ openapi: 3.0.0
 
 info:
   title: Manthan API
-  version: 0.2.0
+  version: "0.2.0"
   description: Decision Infrastructure API for secure, auditable execution
 
 servers:
   - url: https://dip-system.fly.dev
-security:
-  - ApiKeyAuth: []
 
 paths:
 
@@ -23,79 +21,13 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - systemId
-                - orgId
-                - action
-                - payload
-                - context
-              properties:
-                systemId:
-                  type: string
-                  example: billing
-                orgId:
-                  type: string
-                  example: orgA
-                action:
-                  type: object
-                  required:
-                    - type
-                  properties:
-                    type:
-                      type: string
-                      example: CREATE_USER
-                payload:
-                  type: object
-                  properties:
-                    userId:
-                      type: string
-                      example: user-1
-                context:
-                  type: object
-                  properties:
-                    actor:
-                      type: string
-                      example: admin
-                    role:
-                      type: string
-                      example: ADMIN
       responses:
         "200":
-          description: Token generated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  requestId:
-                    type: string
-                  execution_token:
-                    type: object
-                    properties:
-                      action:
-                        type: object
-                      payload:
-                        type: object
-                      decisionHash:
-                        type: string
-                      auditBinding:
-                        type: string
-                      requestId:
-                        type: string
-                      iat:
-                        type: number
-                      kid:
-                        type: string
-                      scope:
-                        type: string
-                      signature:
-                        type: string
+          description: Success
 
   /execute:
     post:
-      summary: Execute action using execution token
+      summary: Execute action
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -104,65 +36,27 @@ paths:
           application/json:
             schema:
               type: object
-              description: Execution token received from /action
       responses:
         "200":
-          description: Execution success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  requestId:
-                    type: string
-                  result:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                      userId:
-                        type: string
+          description: Success
 
   /audit:
     get:
-      summary: Get recent audit logs
+      summary: Get audit logs
       security:
         - ApiKeyAuth: []
       responses:
         "200":
-          description: Audit logs
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: array
-                    items:
-                      type: object
+          description: Success
 
   /audit/summary:
     get:
-      summary: Get audit summary with trends
+      summary: Get audit summary
       security:
         - ApiKeyAuth: []
-      parameters:
-        - in: query
-          name: range
-          schema:
-            type: string
-            example: 7d
       responses:
         "200":
-          description: Audit summary
-          content:
-            application/json:
-              schema:
-                type: object
+          description: Success
 
   /audit/{requestId}:
     get:
@@ -177,16 +71,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Audit record
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: object
+          description: Success
 
 components:
   securitySchemes:
