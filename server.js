@@ -294,9 +294,7 @@ app.get("/docs-content/:file", (req, res) => {
   }
 
   const md = fs.readFileSync(filePath, "utf-8");
-  const html = marked(md);
-
-  res.send(html);
+  res.send(md);
 });
 // -----------------------------
 // AUDIT APIs
