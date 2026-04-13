@@ -2,28 +2,86 @@
 <html>
 <head>
   <title>Manthan Docs</title>
+
   <style>
-    body { font-family: Arial; margin: 40px; max-width: 900px; }
-    h1, h2, h3 { color: #222; }
-    pre { background: #111; color: #0f0; padding: 10px; }
-    a { color: blue; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #111;
+      color: white;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .sidebar div {
+      margin: 10px 0;
+      cursor: pointer;
+      color: #ccc;
+    }
+
+    .sidebar div:hover {
+      color: white;
+    }
+
+    /* Content */
+    .content {
+      flex: 1;
+      padding: 40px;
+      max-width: 900px;
+    }
+
+    pre {
+      background: #111;
+      color: #0f0;
+      padding: 12px;
+      overflow-x: auto;
+    }
+
+    code {
+      background: #eee;
+      padding: 2px 6px;
+    }
   </style>
 </head>
+
 <body>
 
-<h1>Manthan Documentation</h1>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Manthan Docs</h2>
 
-<div id="content">Loading...</div>
+    <div onclick="loadDoc('README.md')">Overview</div>
+    <div onclick="loadDoc('API.md')">API</div>
+    <div onclick="loadDoc('ARCHITECTURE.md')">Architecture</div>
+    <div onclick="loadDoc('SECURITY.md')">Security</div>
+  </div>
 
-<script>
-async function loadDoc(file) {
-  const res = await fetch("/docs-content/" + file);
-  const html = await res.text();
-  document.getElementById("content").innerHTML = html;
-}
+  <!-- Content -->
+  <div class="content">
+    <div id="content">Loading...</div>
+  </div>
 
-loadDoc("README.md");
-</script>
+  <script>
+    async function loadDoc(file) {
+      const res = await fetch("/docs-content/" + file);
+      const html = await res.text();
+      document.getElementById("content").innerHTML = html;
+    }
+
+    // default page
+    loadDoc("README.md");
+  </script>
 
 </body>
 </html>
