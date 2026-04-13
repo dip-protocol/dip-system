@@ -2,20 +2,25 @@
 <html>
 <head>
   <title>Manthan Docs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
       margin: 0;
       font-family: Arial;
       display: flex;
+      height: 100vh;
+      overflow: hidden;
     }
 
+    /* Sidebar */
     .sidebar {
       width: 250px;
       background: #111;
       color: white;
       padding: 20px;
-      height: 100vh;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
     }
 
     .sidebar h3 {
@@ -35,9 +40,11 @@
       color: #fff;
     }
 
+    /* Content */
     .content {
       flex: 1;
-      padding: 30px;
+      padding: 20px;
+      overflow-y: auto;
     }
 
     pre {
@@ -45,27 +52,97 @@
       color: #0f0;
       padding: 15px;
       overflow-x: auto;
+      border-radius: 6px;
     }
 
     code {
       color: #0f0;
+    }
+
+    /* Mobile header */
+    .mobile-header {
+      display: none;
+      background: #111;
+      color: white;
+      padding: 15px;
+      font-size: 18px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .menu-btn {
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    /* Overlay for mobile */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+    }
+
+    /* MOBILE */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .mobile-header {
+        display: flex;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        transform: translateX(-100%);
+        z-index: 1000;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .overlay.show {
+        display: block;
+      }
+
+      .content {
+        padding: 15px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<div class="sidebar">
-  <h3>Manthan Docs</h3>
-
-  <!-- ✅ FIXED: use "this" instead of event -->
-  <a onclick="loadDoc('01-system-overview.md', this)">Overview</a>
-  <a onclick="loadDoc('02-backend-and-api.md', this)">API</a>
-  <a onclick="loadDoc('FILE_DOCUMENTATION.md', this)">API Explorer</a>
-  <a onclick="loadDoc('03-decision-core-rules-and-audit.md', this)">Decision</a>
-  <a onclick="loadDoc('04-frontend-and-ops.md', this)">Ops</a>
+<!-- Mobile Header -->
+<div class="mobile-header">
+  <span>📘 Manthan Docs</span>
+  <span class="menu-btn" onclick="toggleSidebar()">☰</span>
 </div>
 
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <h3>Manthan Docs</h3>
+
+  <a href="#" onclick="loadDoc('01-system-overview.md', this)">Overview</a>
+  <a href="#" onclick="loadDoc('02-backend-and-api.md', this)">API</a>
+  <a href="#" onclick="loadDoc('FILE_DOCUMENTATION.md', this)">File Docs</a>
+  <a href="#" onclick="loadDoc('03-decision-core-rules-and-audit.md', this)">Decision</a>
+  <a href="#" onclick="loadDoc('04-frontend-and-ops.md', this)">Ops</a>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- Content -->
 <div class="content" id="content">
   Loading...
 </div>
@@ -75,10 +152,18 @@
 <script>
 async function loadDoc(file, element) {
   try {
-    const res = await fetch(window.location.origin + "/docs-content/" + file + "?t=" + Date.now());
-    const text = await res.text();
+    const contentEl = document.getElementById("content");
 
-    document.getElementById("content").innerHTML = marked.parse(text);
+    contentEl.innerHTML = "<p>Loading...</p>";
+
+    const res = await fetch("/docs-content/" + file + "?t=" + Date.now());
+
+    if (!res.ok) {
+      throw new Error("File not found");
+    }
+
+    const text = await res.text();
+    contentEl.innerHTML = marked.parse(text);
 
     // highlight active link
     document.querySelectorAll(".sidebar a").forEach(a => {
@@ -89,9 +174,24 @@ async function loadDoc(file, element) {
       element.classList.add("active");
     }
 
+    // close sidebar on mobile after click
+    closeSidebar();
+
   } catch (err) {
-    document.getElementById("content").innerHTML = "<h2>Error loading document</h2>";
+    document.getElementById("content").innerHTML =
+      "<h2>❌ Error loading document</h2><p>" + err.message + "</p>";
   }
+}
+
+// mobile toggle
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("overlay").classList.toggle("show");
+}
+
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("overlay").classList.remove("show");
 }
 
 // default load

@@ -20,6 +20,7 @@ const swaggerDocument = YAML.load(
   path.join(__dirname, "docs", "openapi.yaml")
 );
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/docs-md', express.static('docs'));
 
 // -----------------------------
 // CANONICALIZE (DETERMINISTIC)
