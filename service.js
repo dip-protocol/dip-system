@@ -15,9 +15,10 @@ const { computeDecisionHash } = require("./utils/hash");
 // INPUT NORMALIZATION (DETERMINISTIC)
 // -----------------------------
 function normalizeInput(input) {
-  if (input?.context?.role) {
-    input.context.role = String(input.context.role).toLowerCase();
-  }
+  if (input?.context?.role !== undefined) {
+  const role = String(input.context.role).trim().toLowerCase();
+  input.context.role = role || null;
+}
 
   if (input?.action?.type) {
     input.action.type = String(input.action.type).toUpperCase();
@@ -40,7 +41,9 @@ if (input.data) {
   if (!input.action.type) {
     throw new Error("INVALID: Missing action type");
   }
-
+if (!input.context.role) {
+  throw new Error("INVALID: Missing or empty role");
+}
   if (input.action.type === "DELETE_USER") {
     if (!input.payload?.userId) {
   throw new Error("INVALID: Missing userId");
