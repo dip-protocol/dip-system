@@ -9,7 +9,6 @@ servers:
   - url: https://dip-system.fly.dev
 
 paths:
-
   /action:
     post:
       summary: Generate execution token
@@ -20,14 +19,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ActionRequest"
+              $ref: '#/components/schemas/ActionRequest'
       responses:
-        "200":
+        '200':
           description: Execution token generated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ActionResponse"
+                $ref: '#/components/schemas/ActionResponse'
 
   /execute:
     post:
@@ -39,14 +38,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ExecuteRequest"
+              $ref: '#/components/schemas/ExecuteRequest'
       responses:
-        "200":
+        '200':
           description: Execution result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExecuteResponse"
+                $ref: '#/components/schemas/ExecuteResponse'
 
   /audit:
     get:
@@ -54,12 +53,12 @@ paths:
       security:
         - ApiKeyAuth: []
       responses:
-        "200":
+        '200':
           description: Audit logs
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuditList"
+                $ref: '#/components/schemas/AuditList'
 
   /audit/summary:
     get:
@@ -69,11 +68,12 @@ paths:
       parameters:
         - name: range
           in: query
+          required: false
           schema:
             type: string
             example: 7d
       responses:
-        "200":
+        '200':
           description: Audit summary
 
   /audit/{requestId}:
@@ -88,15 +88,14 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Audit record
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuditRecord"
+                $ref: '#/components/schemas/AuditRecord'
 
 components:
-
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
@@ -104,10 +103,14 @@ components:
       name: x-api-key
 
   schemas:
-
     ActionRequest:
       type: object
-      required: [systemId, orgId, action, payload, context]
+      required:
+        - systemId
+        - orgId
+        - action
+        - payload
+        - context
       properties:
         systemId:
           type: string
@@ -147,7 +150,7 @@ components:
           type: string
           example: uuid
         execution_token:
-          $ref: "#/components/schemas/ExecutionToken"
+          $ref: '#/components/schemas/ExecutionToken'
 
     ExecutionToken:
       type: object
@@ -168,7 +171,13 @@ components:
 
     ExecuteRequest:
       type: object
-      required: [action, payload, requestId, decisionHash, auditBinding, signature]
+      required:
+        - action
+        - payload
+        - requestId
+        - decisionHash
+        - auditBinding
+        - signature
       properties:
         action:
           type: object
@@ -188,8 +197,10 @@ components:
       properties:
         success:
           type: boolean
+          example: true
         requestId:
           type: string
+          example: uuid
         result:
           type: object
           example:
@@ -216,7 +227,8 @@ components:
       properties:
         success:
           type: boolean
+          example: true
         logs:
           type: array
           items:
-            $ref: "#/components/schemas/AuditRecord"
+            $ref: '#/components/schemas/AuditRecord'
