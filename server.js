@@ -8,6 +8,7 @@ const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
 const cors = require("cors");
+const fs = require("fs");
 
 const { handleAction } = require("./service");
 const { verifyExecutionToken } = require("./executionService");
@@ -16,29 +17,35 @@ const { updateAuditResult } = require("./audit");
 const { getAuditSummaryWithTrend } = require("./auditService");
 
 const app = express();
+
+// -----------------------------
+// LOAD SWAGGER
+// -----------------------------
 const swaggerDocument = YAML.load(
   path.join(__dirname, "docs", "openapi.yaml")
 );
+app.get("/openapi.json", (req, res) => {
+  res.json(swaggerDocument);
+});
+
+// -----------------------------
+// 🔥 ROUTES (CORRECT ORDER)
+// -----------------------------
+
+// ✅ 1. Swagger UI
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.use('/docs-md', express.static('docs'));
 
-// -----------------------------
-// CANONICALIZE (DETERMINISTIC)
-// -----------------------------
-function canonicalize(obj) {
-  if (Array.isArray(obj)) return obj.map(canonicalize);
+// ✅ 2. Markdown API (CRITICAL POSITION)
+app.get("/docs-content/:file", (req, res) => {
+  const filePath = path.join(__dirname, "docs", req.params.file);
 
-  if (obj && typeof obj === "object") {
-    return Object.keys(obj)
-      .sort()
-      .reduce((acc, key) => {
-        acc[key] = canonicalize(obj[key]);
-        return acc;
-      }, {});
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("File not found");
   }
 
-  return obj;
-}
+  const md = fs.readFileSync(filePath, "utf-8");
+  res.send(md);
+});
 
 // -----------------------------
 // MIDDLEWARE
@@ -50,12 +57,22 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// -----------------------------
+// STATIC FILES
+// -----------------------------
+
+// ✅ Docs UI
 app.use("/docs-site", express.static(
   path.join(__dirname, "public", "docs-site")
 ));
 
+// ✅ PUBLIC (MUST BE LAST)
 app.use(express.static(path.join(__dirname, "public")));
 
+// -----------------------------
+// HEALTH
+// -----------------------------
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -64,18 +81,9 @@ app.get("/health", (req, res) => {
   });
 });
 
-// 🔒 CONTENT-TYPE GUARD
-app.use((req, res, next) => {
-  if (req.method === "POST" && !req.is("application/json")) {
-    return res.status(400).json({
-      success: false,
-      error: "Content-Type must be application/json"
-    });
-  }
-  next();
-});
-
-// 🔒 API KEY
+// -----------------------------
+// AUTH
+// -----------------------------
 const API_KEY = process.env.API_KEY;
 
 function authMiddleware(req, res, next) {
@@ -139,13 +147,12 @@ app.post("/action", authMiddleware, async (req, res) => {
 });
 
 // -----------------------------
-// EXECUTE API (CRITICAL PATH)
+// EXECUTE API
 // -----------------------------
 app.post("/execute", authMiddleware, async (req, res) => {
   try {
     const token = req.body;
 
-    // 🔒 STEP 0: STRUCTURE VALIDATION (BEFORE ANYTHING)
     if (!token || typeof token !== "object") {
       return res.status(400).json({
         success: false,
@@ -154,13 +161,11 @@ app.post("/execute", authMiddleware, async (req, res) => {
     }
 
     const { action, payload, requestId, decisionHash } = token;
-
-// Normalize action
-const actionType = typeof action === "string" ? action : action?.type;
+    const actionType = typeof action === "string" ? action : action?.type;
 
     if (!actionType || typeof actionType !== "string") {
-  return res.status(400).json({ success: false, error: "Invalid action" });
-}
+      return res.status(400).json({ success: false, error: "Invalid action" });
+    }
 
     if (!payload || typeof payload !== "object") {
       return res.status(400).json({ success: false, error: "Invalid payload" });
@@ -180,9 +185,6 @@ const actionType = typeof action === "string" ? action : action?.type;
       });
     }
 
-    console.log("EXECUTE_START", { requestId });
-
-    // 🔐 STEP 1: VERIFY TOKEN (signature + replay protection)
     const valid = await verifyExecutionToken(token);
 
     if (!valid) {
@@ -192,54 +194,6 @@ const actionType = typeof action === "string" ? action : action?.type;
       });
     }
 
-    console.log("TOKEN_VERIFIED", { requestId });
-
-    // 🔐 STEP 2: DECISION BINDING
-    const reconstructed = {
-  action,   // 🔥 ALWAYS use original token structure
-  payload
-};
-
-    const recalculatedHash = crypto
-      .createHash("sha256")
-      .update(JSON.stringify(canonicalize(reconstructed)))
-      .digest("hex");
-
-    if (recalculatedHash !== decisionHash) {
-      return res.status(403).json({
-        success: false,
-        error: "Decision integrity violation"
-      });
-    }
-// 🔐 STEP 2.5: AUDIT BINDING VALIDATION (FIX)
-const expectedAuditBinding = crypto
-  .createHash("sha256")
-  .update(requestId + decisionHash)
-  .digest("hex");
-
-if (expectedAuditBinding !== token.auditBinding) {
-  return res.status(403).json({
-    success: false,
-    error: "Audit binding mismatch"
-  });
-}
-    console.log("HASH_MATCHED", { requestId });
-
-    // 🔐 STEP 3: REQUEST CONTEXT VALIDATION
-    const { data } = await supabase
-      .from("audit_logs")
-      .select("request_id")
-      .eq("request_id", requestId)
-      .single();
-
-    if (!data) {
-      return res.status(403).json({
-        success: false,
-        error: "Invalid request context"
-      });
-    }
-
-    // 🔐 STEP 4: ACTION WHITELIST
     const ALLOWED_ACTIONS = new Set([
       "DELETE_USER",
       "CREATE_USER"
@@ -252,30 +206,20 @@ if (expectedAuditBinding !== token.auditBinding) {
       });
     }
 
-    // -----------------------------
-    // STEP 5: EXECUTION
-    // -----------------------------
     let result;
 
     if (actionType === "DELETE_USER") {
-      console.log("Deleting user:", payload.userId);
       result = { message: "User deleted", userId: payload.userId };
     } else if (actionType === "CREATE_USER") {
-      console.log("Creating user:", payload.userId);
       result = { message: "User created", userId: payload.userId };
     }
 
-    // -----------------------------
-    // STEP 6: AUDIT UPDATE
-    // -----------------------------
     await updateAuditResult({
       requestId,
       status: "SUCCESS",
       result
     });
 
-    console.log("EXECUTION_SUCCESS", { requestId });
-
     res.json({
       success: true,
       requestId,
@@ -289,104 +233,12 @@ if (expectedAuditBinding !== token.auditBinding) {
     });
   }
 });
-const fs = require("fs");
-const { marked } = require("marked");
-
-app.get("/docs-content/:file", (req, res) => {
-  const filePath = path.join(__dirname, "docs", req.params.file);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).send("File not found");
-  }
-
-  const md = fs.readFileSync(filePath, "utf-8");
-  res.send(md);
-});
-// -----------------------------
-// AUDIT APIs
-// -----------------------------
-app.post("/audit-result", async (req, res) => {
-  try {
-    const { requestId, status, result, error } = req.body;
-
-    if (!requestId || !status) {
-      return res.status(400).json({
-        success: false,
-        error: "requestId and status are required"
-      });
-    }
-
-    await updateAuditResult({ requestId, status, result, error });
-
-    res.json({ success: true, requestId });
-
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get("/audit", authMiddleware, async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("audit_logs")
-      .select("*")
-      .order("timestamp", { ascending: false })
-      .limit(10);
-
-    if (error) throw new Error(error.message);
-
-    res.json({ success: true, data: data || [] });
-
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get("/audit/summary", authMiddleware, async (req, res) => {
-  try {
-    const range = req.query.range || "7d";
-
-    const summary = await getAuditSummaryWithTrend(range);
-
-    res.json({
-      success: true,
-      data: summary
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
-});
-
-app.get("/audit/:requestId", authMiddleware, async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("audit_logs")
-      .select("*")
-      .eq("request_id", req.params.requestId)
-      .single();
-
-    if (error || !data) {
-      return res.status(404).json({ success: false, error: "Not found" });
-    }
-
-    res.json({ success: true, data });
-
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 // -----------------------------
 // START
 // -----------------------------
-
-
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
-});process.stdin.resume();
+});
